@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}最新公告 · 金币联盟{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:50px">
+  <div class="container" style="max-width:880px">
+    <div class="section-head">
+      <h2 class="section-title">
+        <span class="num">06</span>
+        最新公告
+      </h2>
+    </div>
+
+    <div class="info-card">
+      <ul class="info-list">
+        {% for a in items %}
+        <li style="padding:18px 0">
+          <span class="dot">◆</span>
+          <a href="{{ url_for('announcement_detail', aid=a.id) }}" style="font-size:15px">{{ a.title }}</a>
+          <span class="meta">{{ a.created_at[:10] }}</span>
+        </li>
+        {% else %}
+        <li><span class="dot">◆</span><span>暂无公告</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}

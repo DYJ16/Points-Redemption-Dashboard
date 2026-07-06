@@ -1,0 +1,129 @@
+{% extends "_base.html" %}
+{% block title %}商家详情 #{{ biz_id }}{% endblock %}
+{% block page_title %}商家详情 - #{{ biz_id }}{% endblock %}
+{% block page_subtitle %}MERCHANT DETAIL{% endblock %}
+{% set active = 'merchant' %}
+
+{% block content %}
+<div class="page-hd">
+  <div>
+    <div class="ph-title"><a href="/merchant" style="color:var(--blue-text);text-decoration:none">← 返回商家列表</a> · 商家详情 <span id="bizName" style="color:var(--cyan)">-</span></div>
+    <div class="ph-sub">商家 ID: <span id="bizId">{{ biz_id }}</span> · 钻取该商家商品 / 会员 / 交易明细</div>
+  </div>
+  <div class="ph-actions">
+    <button class="btn" id="btnExport">导出</button>
+  </div>
+</div>
+
+<div class="kpi-row" id="kpiRow">
+  <div class="kpi-card"><div class="kc-tag">PRODUCTS</div><div class="kc-val" id="k-productCount">-</div><div class="kc-sub">商家商品数</div></div>
+  <div class="kpi-card"><div class="kc-tag">MEMBERS</div><div class="kc-val" id="k-memberCount">-</div><div class="kc-sub">发展会员数</div></div>
+  <div class="kpi-card"><div class="kc-tag">EARN COIN</div><div class="kc-val" id="k-earnCoin">-</div><div class="kc-sub">累计积分发放</div></div>
+  <div class="kpi-card"><div class="kc-tag">JF CODES</div><div class="kc-val" id="k-jfCodeCount">-</div><div class="kc-sub">积分码总数</div></div>
+</div>
+
+<div class="detail-grid">
+  <div class="panel" style="display:flex;flex-direction:column">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">01</span>
+        <div><div class="hd-title">商家交易趋势</div><div class="hd-sub">DAILY TREND</div></div>
+      </div>
+    </div>
+    <div class="panel-bd" style="height:280px" id="chart-merchant-trend"></div>
+  </div>
+
+  <div class="panel" style="display:flex;flex-direction:column">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">02</span>
+        <div><div class="hd-title">商家商品列表</div><div class="hd-sub">PRODUCTS</div></div>
+      </div>
+    </div>
+    <div class="panel-bd" style="flex:1; overflow:auto; max-height: 280px;">
+      <table class="tbl" id="productTable">
+        <thead><tr><th>ID</th><th>商品名</th><th>品牌</th><th>类型</th><th>积分</th><th>状态</th></tr></thead>
+        <tbody><tr><td colspan="6" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="display:flex;flex-direction:column; min-height: 280px;">
+  <span class="pc-tr"></span><span class="pc-bl"></span>
+  <div class="panel-hd">
+    <div class="hd-l">
+      <span class="hd-num">03</span>
+      <div><div class="hd-title">发展会员 TOP 20</div><div class="hd-sub">MEMBERS BY POINTS</div></div>
+    </div>
+  </div>
+  <div class="panel-bd" style="flex:1; overflow:auto; max-height: 360px;">
+    <table class="tbl" id="memberTable">
+      <thead><tr><th>ID</th><th>姓名</th><th>登录名</th><th>注册时间</th><th>可用积分</th><th>累计积分</th></tr></thead>
+      <tbody><tr><td colspan="6" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const bizId = {{ biz_id|int if biz_id else 0 }};
+(async function() {
+  if (!bizId) {
+    document.querySelector('.submain').innerHTML = '<div class="panel panel-bd" style="text-align:center;color:#5a8bd6;padding:40px">未指定商家 ID</div>';
+    return;
+  }
+  const r = await fetch('/api/merchant_detail?id=' + bizId);
+  const data = await r.json();
+  if (data.detail) {
+    document.getElementById('bizName').textContent = data.detail.BusinessCnName || '';
+    document.getElementById('k-productCount').textContent = data.detail.ProductCount || 0;
+    document.getElementById('k-memberCount').textContent = data.detail.MemberCount || 0;
+    document.getElementById('k-earnCoin').textContent = (data.detail.EarnCoin || 0).toLocaleString();
+    document.getElementById('k-jfCodeCount').textContent = data.detail.JFCodeCount || 0;
+  }
+  // 商品
+  const ptb = document.querySelector('#productTable tbody');
+  if (data.products && data.products.length) {
+    ptb.innerHTML = data.products.map(p => `
+      <tr><td>${p.ProductID}</td><td>${p.ProductName||''}</td><td>${p.ProductBrand||''}</td><td>${p.ProductType||''}</td>
+      <td class="num">${(p.ProductCoin||0).toLocaleString()}</td>
+      <td><span class="pill ${p.ProductStatus===1?'pill-OK':'pill-DISABLED'}">${p.ProductStatus===1?'在售':'下架'}</span></td></tr>
+    `).join('');
+  } else {
+    ptb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#3d6299">暂无商品</td></tr>';
+  }
+  // 会员
+  const mtb = document.querySelector('#memberTable tbody');
+  if (data.members && data.members.length) {
+    mtb.innerHTML = data.members.map(m => `
+      <tr><td>${m.CustomerID}</td><td>${m.RealName||''}</td><td>${m.LoginName||''}</td><td>${m.CreateTime||''}</td>
+      <td class="num">${(m.ValidCoin||0).toLocaleString()}</td>
+      <td class="num">${(m.HistoryCoin||0).toLocaleString()}</td></tr>
+    `).join('');
+  } else {
+    mtb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#3d6299">暂无会员</td></tr>';
+  }
+  // 图表
+  const chart = echarts.init(document.getElementById('chart-merchant-trend'));
+  const daily = data.daily || [];
+  chart.setOption({
+    grid: { left: 50, right: 30, top: 20, bottom: 30 },
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: daily.map(d => (d.FDate||'').slice(5)), axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }}, axisLabel: { color: '#5a8bd6', fontSize: 10 } },
+    yAxis: [
+      { type: 'value', name: '笔数', axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }}, axisLabel: { color: '#5a8bd6', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(0,217,255,0.06)', type: 'dashed' }} },
+      { type: 'value', name: '积分', axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }}, axisLabel: { color: '#5a8bd6', fontSize: 10 }, splitLine: { show: false } },
+    ],
+    series: [
+      { name: '交易笔数', type: 'bar', data: daily.map(d => d.TradeCount), itemStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#00d9ff'},{offset:1,color:'#0066aa'}] }, borderRadius: [2,2,0,0] } },
+      { name: '积分发放', type: 'line', yAxisIndex: 1, smooth: true, data: daily.map(d => d.EarnCoin), lineStyle: { color: '#7862ff', width: 2, shadowColor: 'rgba(120,98,255,0.5)', shadowBlur: 8 }, itemStyle: { color: '#7862ff' }, areaStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(120,98,255,0.3)'},{offset:1,color:'rgba(120,98,255,0)'}] } } },
+    ],
+  });
+  window.addEventListener('resize', () => chart.resize());
+})();
+</script>
+{% endblock %}

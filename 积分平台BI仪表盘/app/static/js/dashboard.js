@@ -567,27 +567,14 @@ if (window.echarts && document.querySelector('script[src*="china.js"]')) {
   refreshAll();
 }
 
-/* ===== 交互：底部导航切换 ===== */
-const PAGE_NAMES = {
-  overview: '首页总览',
-  merchant: '商家监控',
-  member: '会员管理',
-  etl: '积分ETL分析',
-  report: '兑换报表',
-  alert: '告警管理',
-  system: '系统管理',
-};
-document.querySelectorAll('#footerNav .nav-item').forEach(item => {
-  item.addEventListener('click', () => {
-    document.querySelectorAll('#footerNav .nav-item').forEach(n => n.classList.remove('active'));
-    item.classList.add('active');
-    const page = item.dataset.page;
-    console.log('[nav] switch to', PAGE_NAMES[page] || page);
-    if (page !== 'overview') {
-      showToast('已切换到 ' + (PAGE_NAMES[page] || page) + '（演示版未启用）');
-    } else {
-      refreshAll();
-    }
+/* ===== 交互：底部导航 ===== */
+// 导航现在是 <a href> 真实跳转，浏览器自动处理
+// 顶部图标按钮（除"返回首页"外）点击提示
+document.querySelectorAll('.topbar-r .icon-btn').forEach(btn => {
+  if (btn.tagName === 'A') return;  // 返回首页按钮是 a 标签
+  btn.addEventListener('click', () => {
+    const title = btn.getAttribute('title') || '';
+    showToast('【' + title + '】演示版未启用');
   });
 });
 
@@ -617,12 +604,7 @@ function filterMapByChannel(ch) {
 }
 
 /* ===== 顶部图标按钮 ===== */
-document.querySelectorAll('.topbar-r .icon-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    const title = btn.getAttribute('title') || '';
-    showToast('【' + title + '】演示版未启用');
-  });
-});
+// (顶部按钮逻辑合并到上面)
 
 /* ===== Toast 提示 ===== */
 function showToast(msg) {

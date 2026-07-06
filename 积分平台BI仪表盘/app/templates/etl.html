@@ -1,0 +1,211 @@
+{% extends "_base.html" %}
+{% block title %}积分ETL分析{% endblock %}
+{% block page_title %}积分ETL分析{% endblock %}
+{% block page_subtitle %}ETL PIPELINE MONITOR{% endblock %}
+{% set active = 'etl' %}
+
+{% block content %}
+<!-- 页面头 -->
+<div class="ph">
+  <div>
+    <div class="ph-title">积分ETL分析</div>
+    <div class="ph-sub">数据从源库流转到 BI 大屏的完整链路监控 · <span id="statusText">实时刷新中</span></div>
+  </div>
+  <div class="ph-actions">
+    <button class="btn" id="btnRun">▶ 立即抽取</button>
+    <button class="btn" id="btnExport">导出</button>
+    <button class="btn btn-primary" id="btnRefresh">⟳ 刷新</button>
+  </div>
+</div>
+
+<!-- 4 块 KPI -->
+<div class="kv-row">
+  <div class="kv-card">
+    <div class="kv-icon">⚙</div>
+    <div class="kv-body">
+      <div class="kv-tag">监控表数</div>
+      <div class="kv-val" id="kpi-tables">-</div>
+      <div class="kv-sub">TABLES</div>
+    </div>
+  </div>
+  <div class="kv-card ok">
+    <div class="kv-icon">✓</div>
+    <div class="kv-body">
+      <div class="kv-tag">抽取成功</div>
+      <div class="kv-val" id="kpi-ok">-</div>
+      <div class="kv-sub">SUCCESS</div>
+    </div>
+  </div>
+  <div class="kv-card warn">
+    <div class="kv-icon">⏱</div>
+    <div class="kv-body">
+      <div class="kv-tag">待抽取</div>
+      <div class="kv-val" id="kpi-pending">-</div>
+      <div class="kv-sub">PENDING</div>
+    </div>
+  </div>
+  <div class="kv-card big">
+    <div class="kv-icon">∑</div>
+    <div class="kv-body">
+      <div class="kv-tag">总记录数</div>
+      <div class="kv-val" id="kpi-rows">-</div>
+      <div class="kv-sub">TOTAL ROWS</div>
+    </div>
+  </div>
+</div>
+
+<!-- 流程图 -->
+<div class="panel" style="padding:0">
+  <span class="pc-tr"></span><span class="pc-bl"></span>
+  <div class="panel-hd">
+    <div class="hd-l">
+      <span class="hd-num">01</span>
+      <div><div class="hd-title">数据流转架构</div><div class="hd-sub">DATA PIPELINE</div></div>
+    </div>
+    <div class="hd-r">
+      <span class="pulse-dot"></span>
+      <span style="color:var(--cyan);font-size:11px">实时</span>
+    </div>
+  </div>
+  <div class="panel-bd" style="padding:24px 16px;">
+    <div class="flow-diagram">
+      <div class="flow-step" data-layer="source">
+        <div class="fs-num">01</div>
+        <div class="fs-icon">▤</div>
+        <div class="fs-name">源业务库</div>
+        <div class="fs-rows">16 张表<br>5 万交易</div>
+        <div class="fs-tag">SOURCE</div>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" data-layer="ods">
+        <div class="fs-num">02</div>
+        <div class="fs-icon">⊕</div>
+        <div class="fs-name">ODS 贴源层</div>
+        <div class="fs-rows">增量同步<br>loadTime 字段</div>
+        <div class="fs-tag">RAW</div>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" data-layer="dwd">
+        <div class="fs-num">03</div>
+        <div class="fs-icon">▣</div>
+        <div class="fs-name">DWD 清洗层</div>
+        <div class="fs-rows">去重/转换<br>空值填充</div>
+        <div class="fs-tag">CLEAN</div>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" data-layer="dws">
+        <div class="fs-num">04</div>
+        <div class="fs-icon">▥</div>
+        <div class="fs-name">DWS 汇总层</div>
+        <div class="fs-rows">按主题聚合<br>日 / 月</div>
+        <div class="fs-tag">AGG</div>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" data-layer="ads">
+        <div class="fs-num">05</div>
+        <div class="fs-icon">◫</div>
+        <div class="fs-name">ADS 应用层</div>
+        <div class="fs-rows">3 事实表<br>8 维表</div>
+        <div class="fs-tag">DW</div>
+      </div>
+      <div class="flow-arrow"></div>
+      <div class="flow-step" data-layer="bi">
+        <div class="fs-num">06</div>
+        <div class="fs-icon">▣</div>
+        <div class="fs-name">BI 大屏</div>
+        <div class="fs-rows">Flask API<br>实时查询</div>
+        <div class="fs-tag">UI</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 详细记录 -->
+<div class="panel" style="display:flex;flex-direction:column; flex:1; min-height:0;">
+  <span class="pc-tr"></span><span class="pc-bl"></span>
+  <div class="panel-hd">
+    <div class="hd-l">
+      <span class="hd-num">02</span>
+      <div><div class="hd-title">9 张表抽取明细</div><div class="hd-sub">9 TABLES · DETAIL</div></div>
+    </div>
+    <div class="hd-r">
+      <input type="text" id="searchInput" placeholder="搜索表名..." style="padding:4px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;outline:none;">
+    </div>
+  </div>
+  <div class="panel-bd" style="flex:1; overflow:auto;">
+    <table class="tbl" id="etlTable">
+      <thead><tr>
+        <th style="width:50px">#</th>
+        <th>表名</th>
+        <th>层级</th>
+        <th>最近抽取</th>
+        <th>记录数</th>
+        <th>耗时</th>
+        <th>状态</th>
+        <th>备注</th>
+      </tr></thead>
+      <tbody><tr><td colspan="8" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const LAYER = {
+  'Dim_Date':         {l:'ODS', t:'自生成',     dur:'0.5s'},
+  'Dim_Merchant':     {l:'DWD', t:'MERGE',     dur:'0.8s'},
+  'Dim_Member':       {l:'DWD', t:'MERGE',     dur:'2.3s'},
+  'Dim_Product':      {l:'DWD', t:'MERGE',     dur:'0.6s'},
+  'Dim_Gift':         {l:'DWD', t:'MERGE',     dur:'0.7s'},
+  'Dim_Region':       {l:'DWD', t:'MERGE',     dur:'0.4s'},
+  'Fact_Point_Earn':     {l:'DWS', t:'增量',       dur:'5.4s'},
+  'Fact_Point_Exchange': {l:'DWS', t:'增量',       dur:'3.2s'},
+  'Fact_Order_Daily':    {l:'DWS', t:'全量重建',   dur:'1.8s'},
+};
+async function load() {
+  document.getElementById('statusText').textContent = '加载中...';
+  const r = await fetch('/api/etl_status');
+  const data = await r.json();
+  const tb = document.querySelector('#etlTable tbody');
+  const k = document.getElementById('searchInput').value.trim().toLowerCase();
+  const filtered = data.filter(d => !k || d.TableName.toLowerCase().includes(k));
+  if (filtered.length === 0) {
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#3d6299;padding:30px">无匹配</td></tr>';
+  } else {
+    tb.innerHTML = filtered.map((d, i) => {
+      const meta = LAYER[d.TableName] || {l:'--', t:'--', dur:'--'};
+      return `<tr>
+        <td style="color:var(--blue-text-3)">${i+1}</td>
+        <td><strong>${d.TableName}</strong></td>
+        <td><span class="pill ${meta.l==='ODS'?'pill-LOW':meta.l==='DWD'?'pill-ACK':meta.l==='DWS'?'pill-pending':'pill-OK'}">${meta.l}</span></td>
+        <td>${d.LastETLTime||'--'}</td>
+        <td class="num" style="color:var(--cyan);font-weight:600">${(d.LastRowCount||0).toLocaleString()}</td>
+        <td style="color:var(--blue-text-2)">${meta.dur}</td>
+        <td><span class="pill ${d.Status==='OK'?'pill-OK':'pill-pending'}"><span class="dot-led"></span>${d.Status||'PENDING'}</span></td>
+        <td style="color:var(--blue-text-2)">${d.Note||'--'}</td>
+      </tr>`;
+    }).join('');
+  }
+  // KPI
+  const ok = data.filter(d => d.Status === 'OK').length;
+  const pend = data.filter(d => d.Status !== 'OK').length;
+  const rows = data.reduce((s,d)=>s+(d.LastRowCount||0), 0);
+  document.getElementById('kpi-tables').textContent = data.length;
+  document.getElementById('kpi-ok').textContent = ok;
+  document.getElementById('kpi-pending').textContent = pend;
+  document.getElementById('kpi-rows').textContent = rows.toLocaleString();
+  document.getElementById('statusText').textContent = '已更新 · ' + new Date().toLocaleTimeString('zh-CN');
+}
+document.getElementById('searchInput').addEventListener('input', load);
+document.getElementById('btnRefresh').addEventListener('click', load);
+document.getElementById('btnExport').addEventListener('click', () => alert('导出 CSV（演示）'));
+document.getElementById('btnRun').addEventListener('click', () => {
+  if (confirm('确认立即执行全量 ETL？\n\n将依次执行 9 个存储过程：\n· Dim_Merchant MERGE\n· Dim_Member MERGE\n· Dim_Product MERGE\n· Dim_Gift MERGE\n· Dim_Region MERGE\n· Fact_Point_Earn 增量\n· Fact_Point_Exchange 增量\n· Fact_Order_Daily 重建')) {
+    alert('ETL 抽取已触发（演示）。生产由 APScheduler 调度。');
+  }
+});
+load();
+setInterval(load, 30000);
+</script>
+{% endblock %}

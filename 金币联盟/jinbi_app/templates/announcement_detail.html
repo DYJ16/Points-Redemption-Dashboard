@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}{{ item.title }} · 金币联盟{% endblock %}
+
+{% block content %}
+<article class="article">
+  <a href="{{ url_for('announcements') }}" style="font-size:13px;color:var(--ink-muted);letter-spacing:.05em">← 返回公告列表</a>
+  <h1 style="margin-top:14px">{{ item.title }}</h1>
+  <div class="article-meta">发布于 {{ item.created_at[:16] }} · 金币联盟官方</div>
+  <div class="article-body">
+    {% for p in item.body.split('\n\n') %}
+      <p>{{ p }}</p>
+    {% endfor %}
+  </div>
+</article>
+{% endblock %}

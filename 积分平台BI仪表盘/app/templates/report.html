@@ -1,0 +1,246 @@
+{% extends "_base.html" %}
+{% block title %}兑换报表{% endblock %}
+{% block page_title %}兑换报表{% endblock %}
+{% block page_subtitle %}EXCHANGE REPORTS{% endblock %}
+{% set active = 'report' %}
+
+{% block content %}
+<div class="ph">
+  <div>
+    <div class="ph-title">兑换报表</div>
+    <div class="ph-sub">商家 × 礼品 × 时间 多维交叉分析 · <span id="statusText">实时刷新中</span></div>
+  </div>
+  <div class="ph-actions">
+    <button class="btn" id="btnExport">导出报表</button>
+    <button class="btn btn-primary" id="btnRefresh">⟳ 刷新</button>
+  </div>
+</div>
+
+<!-- 4 块 KPI -->
+<div class="kv-row">
+  <div class="kv-card">
+    <div class="kv-icon">⊟</div>
+    <div class="kv-body">
+      <div class="kv-tag">总有效订单</div>
+      <div class="kv-val" id="kpi-orders">-</div>
+      <div class="kv-sub">ORDERS</div>
+    </div>
+  </div>
+  <div class="kv-card big">
+    <div class="kv-icon">∑</div>
+    <div class="kv-body">
+      <div class="kv-tag">总兑换积分</div>
+      <div class="kv-val" id="kpi-coin">-</div>
+      <div class="kv-sub">TOTAL COIN</div>
+    </div>
+  </div>
+  <div class="kv-card">
+    <div class="kv-icon">☻</div>
+    <div class="kv-body">
+      <div class="kv-tag">参与会员</div>
+      <div class="kv-val" id="kpi-members">-</div>
+      <div class="kv-sub">MEMBERS</div>
+    </div>
+  </div>
+  <div class="kv-card ok">
+    <div class="kv-icon">▣</div>
+    <div class="kv-body">
+      <div class="kv-tag">兑换礼品数</div>
+      <div class="kv-val" id="kpi-gifts">-</div>
+      <div class="kv-sub">GIFTS</div>
+    </div>
+  </div>
+</div>
+
+<!-- 上：两个大图表 -->
+<div class="r2-report">
+  <div class="panel" style="display:flex;flex-direction:column; min-height: 380px;">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">01</span>
+        <div><div class="hd-title">每日兑换趋势</div><div class="hd-sub">DAILY TREND · 2016-2018</div></div>
+      </div>
+      <div class="hd-r" style="display:flex;gap:12px">
+        <span style="color:var(--cyan);font-size:11px">订单</span>
+        <span style="color:var(--purple);font-size:11px">积分</span>
+        <span style="color:var(--orange);font-size:11px">礼品</span>
+      </div>
+    </div>
+    <div class="panel-bd" id="chart-daily" style="flex:1"></div>
+  </div>
+
+  <div class="panel" style="display:flex;flex-direction:column; min-height: 380px;">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">02</span>
+        <div><div class="hd-title">商家兑换 TOP 10</div><div class="hd-sub">TOP MERCHANTS</div></div>
+      </div>
+    </div>
+    <div class="panel-bd" id="chart-merchant" style="flex:1"></div>
+  </div>
+</div>
+
+<!-- 下：分类表 + 玫瑰图 -->
+<div class="r2-report">
+  <div class="panel" style="display:flex;flex-direction:column; min-height: 360px;">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">03</span>
+        <div><div class="hd-title">分类兑换明细</div><div class="hd-sub">BY CATEGORY</div></div>
+      </div>
+      <div class="hd-r">
+        <input type="text" id="searchInput" placeholder="搜索分类" style="padding:4px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;outline:none;">
+      </div>
+    </div>
+    <div class="panel-bd" style="flex:1; overflow:auto;">
+      <table class="tbl" id="catTable">
+        <thead><tr>
+          <th>分类</th>
+          <th style="text-align:right">订单数</th>
+          <th style="text-align:right">兑换礼品数</th>
+          <th style="text-align:right">兑换总积分</th>
+          <th>占比</th>
+        </tr></thead>
+        <tbody><tr><td colspan="5" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel" style="display:flex;flex-direction:column; min-height: 360px;">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">04</span>
+        <div><div class="hd-title">分类积分占比</div><div class="hd-sub">CATEGORY SHARE</div></div>
+      </div>
+    </div>
+    <div class="panel-bd" id="chart-cat-pie" style="flex:1"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allData = null;
+const CYAN = '#00e6ff', PURPLE = '#7862ff', GOLD = '#ffae00', TXT = '#5a8bd6';
+const baseOpt = {
+  grid: { left: 50, right: 30, top: 30, bottom: 40 },
+  tooltip: { trigger: 'axis', backgroundColor: 'rgba(2,6,15,0.95)', borderColor: 'rgba(0,217,255,0.5)', textStyle: { color: '#d6e8ff' } },
+  legend: { textStyle: { color: '#94c8ff', fontSize: 11 }, top: 0 },
+};
+const axisStyle = {
+  axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }},
+  axisLabel: { color: TXT, fontSize: 10 },
+  splitLine: { lineStyle: { color: 'rgba(0,217,255,0.06)', type: 'dashed' }},
+};
+const chartDaily = echarts.init(document.getElementById('chart-daily'));
+const chartMerch = echarts.init(document.getElementById('chart-merchant'));
+const chartCatPie = echarts.init(document.getElementById('chart-cat-pie'));
+
+async function load() {
+  document.getElementById('statusText').textContent = '加载中...';
+  const r = await fetch('/api/report_summary');
+  const data = await r.json();
+  allData = data;
+  // KPI
+  document.getElementById('kpi-orders').textContent = (data.kpi.orderCount||0).toLocaleString();
+  document.getElementById('kpi-coin').textContent = (data.kpi.totalCoin||0).toLocaleString();
+  document.getElementById('kpi-members').textContent = (data.kpi.memberCount||0).toLocaleString();
+  document.getElementById('kpi-gifts').textContent = (data.kpi.giftCount||0).toLocaleString();
+  // Daily trend
+  const daily = data.daily_gift || [];
+  const dates = daily.map(d => (d.FDate||'').slice(5));
+  chartDaily.setOption({
+    ...baseOpt,
+    grid: { left: 50, right: 50, top: 30, bottom: 50 },
+    xAxis: { type: 'category', data: dates, ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(dates.length/12)) } },
+    yAxis: [
+      { type: 'value', name: '订单', ...axisStyle },
+      { type: 'value', name: '积分', ...axisStyle, splitLine: { show: false } },
+    ],
+    dataZoom: [{ type: 'inside', start: 0, end: 100 }],
+    series: [
+      { name: '订单数', type: 'line', smooth: true, data: daily.map(d => d.OrderCount), lineStyle: { color: CYAN, width: 2, shadowColor: 'rgba(0,230,255,0.5)', shadowBlur: 8 }, itemStyle: { color: CYAN }, areaStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(0,230,255,0.4)'},{offset:1,color:'rgba(0,230,255,0)'}]} } },
+      { name: '兑换积分', type: 'line', yAxisIndex: 1, smooth: true, data: daily.map(d => d.TotalCoin), lineStyle: { color: PURPLE, width: 1.5, type: [4,4] }, itemStyle: { color: PURPLE } },
+      { name: '礼品数', type: 'bar', data: daily.map(d => d.GiftNum), barWidth: 4, itemStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(255,174,0,0.7)'},{offset:1,color:'rgba(255,174,0,0.05)'}]}, borderRadius: [2,2,0,0] } },
+    ],
+  });
+  // Merchant top
+  const m = data.merchant_top || [];
+  const top10 = m.slice(0, 10);
+  if (top10.length === 0) {
+    document.getElementById('chart-merchant').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#5a8bd6;font-size:13px">暂无商家兑换数据（需等数据完整生成）</div>';
+  } else {
+    chartMerch.setOption({
+      grid: { left: 110, right: 80, top: 10, bottom: 10 },
+      tooltip: { ...baseOpt.tooltip, trigger: 'axis', axisPointer: { type: 'shadow' } },
+      xAxis: { type: 'value', ...axisStyle, axisLabel: { ...axisStyle.axisLabel, formatter: v => v>=10000?(v/10000).toFixed(1)+'w':v } },
+      yAxis: { type: 'category', data: top10.map(x=>x.BusinessCnName).reverse(), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, fontSize: 11 } },
+      series: [{
+        type: 'bar', data: top10.map(x=>x.EarnCoin || x.TotalCoin).reverse(), barWidth: 14,
+        itemStyle: { color: { type: 'linear', x:0,y:0,x2:1,y2:0, colorStops: [{offset:0,color:'rgba(120,98,255,0.2)'},{offset:1,color:PURPLE}] }, borderRadius: [0,3,3,0], shadowColor: 'rgba(120,98,255,0.4)', shadowBlur: 8 },
+        label: { show: true, position: 'right', color: CYAN, fontFamily: 'Manrope', fontWeight: 700, formatter: p => p.value.toLocaleString() },
+      }],
+    });
+  }
+  // Category pie
+  const cat = data.category || [];
+  const palette = [CYAN, PURPLE, '#00ff9d', GOLD, '#ff3e6c', '#5a8bd6', '#b35cff', '#0099cc', '#ff8800'];
+  if (cat.length === 0) {
+    document.getElementById('chart-cat-pie').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#5a8bd6;font-size:13px">暂无分类数据</div>';
+  } else {
+    chartCatPie.setOption({
+      tooltip: { ...baseOpt.tooltip, trigger: 'item', formatter: '{b}<br/>积分 {c}<br/>占比 {d}%' },
+      legend: { type: 'scroll', orient: 'vertical', right: 8, top: 'middle', textStyle: { color: '#94c8ff', fontSize: 11 }, itemWidth: 10, itemHeight: 10, itemGap: 8 },
+      series: [{
+        type: 'pie', radius: ['38%', '68%'], center: ['38%', '52%'],
+        avoidLabelOverlap: true,
+        itemStyle: { borderColor: '#040b1c', borderWidth: 2, color: (params) => palette[params.dataIndex % palette.length] },
+        label: { show: false }, labelLine: { show: false },
+        data: cat.map(c => ({ name: c.GiftCategory, value: c.TotalCoin })),
+        emphasis: { scale: true, scaleSize: 8, label: { show: true, color: CYAN, fontWeight: 700, fontSize: 12, formatter: '{b}\n{d}%' } },
+      }],
+    });
+  }
+  // Category table
+  const total = cat.reduce((s,x)=>s+(x.TotalCoin||0), 0) || 1;
+  const tb = document.querySelector('#catTable tbody');
+  renderCatTable(cat, total, tb);
+  document.getElementById('statusText').textContent = '已更新 · ' + new Date().toLocaleTimeString('zh-CN');
+}
+function renderCatTable(cat, total, tb) {
+  if (cat.length === 0) {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#3d6299;padding:30px">暂无数据</td></tr>';
+    return;
+  }
+  tb.innerHTML = cat.map(c => `
+    <tr>
+      <td><strong>${c.GiftCategory||'--'}</strong></td>
+      <td class="num">${(c.OrderCount||0).toLocaleString()}</td>
+      <td class="num">${(c.GiftNum||0).toLocaleString()}</td>
+      <td class="num" style="color:var(--cyan);font-weight:700">${(c.TotalCoin||0).toLocaleString()}</td>
+      <td><div style="display:flex;align-items:center;gap:8px">
+        <div style="width:90px;height:6px;background:rgba(0,217,255,0.1);border-radius:2px;overflow:hidden">
+          <div style="width:${(c.TotalCoin/total*100).toFixed(1)}%;height:100%;background:linear-gradient(90deg,#00d9ff,#00e6ff);box-shadow:0 0 6px var(--cyan)"></div>
+        </div>
+        <span style="font-size:11px;color:var(--blue-text);font-weight:600">${(c.TotalCoin/total*100).toFixed(1)}%</span>
+      </div></td>
+    </tr>
+  `).join('');
+}
+document.getElementById('searchInput').addEventListener('input', e => {
+  if (!allData) return;
+  const k = e.target.value.trim().toLowerCase();
+  const cat = (allData.category||[]).filter(c => (c.GiftCategory||'').toLowerCase().includes(k));
+  const total = cat.reduce((s,x)=>s+(x.TotalCoin||0), 0) || 1;
+  renderCatTable(cat, total, document.querySelector('#catTable tbody'));
+});
+document.getElementById('btnRefresh').addEventListener('click', load);
+document.getElementById('btnExport').addEventListener('click', () => alert('报表导出（演示）'));
+window.addEventListener('resize', () => { chartDaily.resize(); chartMerch.resize(); chartCatPie.resize(); });
+load();
+</script>
+{% endblock %}

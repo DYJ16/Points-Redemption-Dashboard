@@ -1,0 +1,106 @@
+{% extends "_base.html" %}
+{% block title %}会员管理{% endblock %}
+{% block page_title %}会员管理{% endblock %}
+{% block page_subtitle %}MEMBER MANAGEMENT{% endblock %}
+{% set active = 'member' %}
+
+{% block content %}
+<div class="page-hd">
+  <div>
+    <div class="ph-title">会员管理</div>
+    <div class="ph-sub">共 <span id="total">-</span> 名会员 · 当前页 <span id="curPage">1</span> / <span id="totalPage">-</span></div>
+  </div>
+  <div class="ph-actions">
+    <button class="btn" id="btnExport">导出 CSV</button>
+    <button class="btn btn-primary" id="btnRefresh">刷新</button>
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi-card"><div class="kc-tag">TOTAL MEMBERS</div><div class="kc-val" id="kpi-total">-</div><div class="kc-sub">活跃会员数</div></div>
+  <div class="kpi-card"><div class="kc-tag">NEW (30d)</div><div class="kc-val" id="kpi-new">-</div><div class="kc-sub">近 30 天新增</div></div>
+  <div class="kpi-card"><div class="kc-tag">AVG COIN</div><div class="kc-val" id="kpi-avg">-</div><div class="kc-sub">人均积分余额</div></div>
+  <div class="kpi-card"><div class="kc-tag">TOP COIN</div><div class="kc-val" id="kpi-top">-</div><div class="kc-sub">最高积分余额</div></div>
+</div>
+
+<div class="panel" style="display:flex; flex-direction:column; min-height: 400px;">
+  <span class="pc-tr"></span><span class="pc-bl"></span>
+  <div class="panel-hd">
+    <div class="hd-l">
+      <span class="hd-num">01</span>
+      <div><div class="hd-title">会员列表</div><div class="hd-sub">点击行 → 钻取该会员</div></div>
+    </div>
+    <div class="hd-r">
+      <input type="text" id="searchInput" placeholder="搜索姓名/登录名" style="padding:4px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;outline:none;">
+      <select id="pageSize" style="padding:4px 8px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;">
+        <option value="20">20/页</option>
+        <option value="50" selected>50/页</option>
+        <option value="100">100/页</option>
+      </select>
+    </div>
+  </div>
+  <div class="panel-bd" style="flex:1; overflow:auto;">
+    <table class="tbl" id="memberTable">
+      <thead><tr>
+        <th>ID</th><th>姓名</th><th>登录名</th><th>性别</th><th>电话</th><th>邮箱</th><th>来源商家</th><th>可用积分</th><th>冻结</th><th>累计</th><th>注册时间</th><th>操作</th>
+      </tr></thead>
+      <tbody><tr><td colspan="12" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+    </table>
+  </div>
+  <div style="display:flex;justify-content:center;align-items:center;padding:12px;gap:8px;border-top:1px solid var(--line-soft)">
+    <button class="btn" id="prevPage">← 上一页</button>
+    <span style="color:var(--blue-text);font-size:12px">第 <span id="curPage2">1</span> 页 / 共 <span id="totalPage2">-</span> 页</span>
+    <button class="btn" id="nextPage">下一页 →</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let state = { page: 1, size: 50, keyword: '' };
+async function load() {
+  const r = await fetch(`/api/members?page=${state.page}&size=${state.size}&keyword=${encodeURIComponent(state.keyword)}`);
+  const data = await r.json();
+  const tb = document.querySelector('#memberTable tbody');
+  if (data.rows && data.rows.length) {
+    tb.innerHTML = data.rows.map(m => `
+      <tr>
+        <td>${m.CustomerID}</td>
+        <td><strong>${m.RealName||''}</strong></td>
+        <td>${m.LoginName||''}</td>
+        <td>${m.Gender===1?'男':m.Gender===2?'女':'--'}</td>
+        <td>${m.Phone||''}</td>
+        <td>${m.Email||''}</td>
+        <td>${m.FromBusiness||'--'}</td>
+        <td class="num" style="color:var(--cyan);font-weight:600">${(m.ValidCoin||0).toLocaleString()}</td>
+        <td class="num">${(m.FrozenCoin||0).toLocaleString()}</td>
+        <td class="num">${(m.HistoryCoin||0).toLocaleString()}</td>
+        <td>${m.CreateTime||''}</td>
+        <td><a href="/member?id=${m.CustomerID}">详情 →</a></td>
+      </tr>
+    `).join('');
+    // KPI
+    const all = data.rows;
+    const top = Math.max(...all.map(m => m.ValidCoin || 0));
+    const avg = Math.round(all.reduce((s,m)=>s+(m.ValidCoin||0), 0) / all.length);
+    document.getElementById('kpi-total').textContent = data.total.toLocaleString();
+    document.getElementById('kpi-avg').textContent = avg.toLocaleString();
+    document.getElementById('kpi-top').textContent = top.toLocaleString();
+  } else {
+    tb.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#3d6299;padding:30px">暂无数据</td></tr>';
+  }
+  document.getElementById('total').textContent = data.total.toLocaleString();
+  document.getElementById('curPage').textContent = data.page;
+  document.getElementById('curPage2').textContent = data.page;
+  document.getElementById('totalPage').textContent = Math.ceil(data.total / data.size);
+  document.getElementById('totalPage2').textContent = Math.ceil(data.total / data.size);
+}
+document.getElementById('searchInput').addEventListener('input', e => { state.keyword = e.target.value; state.page = 1; load(); });
+document.getElementById('pageSize').addEventListener('change', e => { state.size = +e.target.value; state.page = 1; load(); });
+document.getElementById('prevPage').addEventListener('click', () => { if (state.page>1) { state.page--; load(); }});
+document.getElementById('nextPage').addEventListener('click', () => { state.page++; load(); });
+document.getElementById('btnRefresh').addEventListener('click', load);
+document.getElementById('btnExport').addEventListener('click', () => alert('CSV 导出已触发（演示）'));
+load();
+</script>
+{% endblock %}

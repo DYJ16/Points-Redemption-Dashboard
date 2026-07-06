@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, initial-scale=1.0">
+  <title>{% block title %}子页面{% endblock %} - 积分兑换平台</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="stylesheet" href="/static/css/subpage.css">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+<body>
+  <div class="grid-bg"></div>
+  <header class="topbar">
+    <div class="topbar-l">
+      <div class="clock">
+        <div class="date" id="dateText">2026-07-06 星期一</div>
+        <div class="time" id="timeText">--:--:--</div>
+      </div>
+    </div>
+    <div class="topbar-c">
+      <div class="title">{% block page_title %}子页面{% endblock %}</div>
+      <div class="title-en">{% block page_subtitle %}SUB PAGE{% endblock %}</div>
+    </div>
+    <div class="topbar-r">
+      <a href="/" class="icon-btn" title="返回首页">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+      </a>
+      <div class="icon-btn" title="业务告警">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 21h20L12 2z"/><path d="M12 9v4M12 17h.01"/></svg>
+        <span class="badge">3</span>
+      </div>
+      <div class="icon-btn" title="系统消息">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-9 8.5 8.5 8.5 0 01-8.5-8.5A8.38 8.38 0 0112 3a8.5 8.5 0 019 8.5z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>
+      </a>
+      <div class="icon-btn" title="全局设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68 1.65 1.65 0 0010 3.17V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <main class="submain">
+    {% block content %}{% endblock %}
+  </main>
+
+  <nav class="footer-nav" id="footerNav">
+    <a href="/" class="nav-item {% if active=='overview' %}active{% endif %}">首页总览</a>
+    <a href="/merchant" class="nav-item {% if active=='merchant' %}active{% endif %}">商家监控</a>
+    <a href="/member" class="nav-item {% if active=='member' %}active{% endif %}">会员管理</a>
+    <a href="/etl" class="nav-item {% if active=='etl' %}active{% endif %}">积分ETL分析</a>
+    <a href="/report" class="nav-item {% if active=='report' %}active{% endif %}">兑换报表</a>
+    <a href="/alert" class="nav-item {% if active=='alert' %}active{% endif %}">告警管理</a>
+    <a href="/system" class="nav-item {% if active=='system' %}active{% endif %}">系统管理</a>
+  </nav>
+
+  <script>
+    // 时间
+    const weekMap = ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'];
+    function tickClock() {
+      const d = new Date();
+      const z = (n) => String(n).padStart(2, '0');
+      document.getElementById('dateText').textContent =
+        d.getFullYear() + '-' + z(d.getMonth()+1) + '-' + z(d.getDate()) + ' ' + weekMap[d.getDay()];
+      document.getElementById('timeText').textContent =
+        z(d.getHours()) + ':' + z(d.getMinutes()) + ':' + z(d.getSeconds());
+    }
+    setInterval(tickClock, 1000); tickClock();
+
+    // 顶部图标
+    document.querySelectorAll('.topbar-r .icon-btn[title]').forEach(btn => {
+      if (btn.tagName === 'A') return;
+      btn.addEventListener('click', () => showToast('【' + (btn.getAttribute('title') || '') + '】演示版未启用'));
+    });
+
+    // Toast
+    function showToast(msg) {
+      let t = document.getElementById('__toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = '__toast';
+        Object.assign(t.style, {
+          position: 'fixed', top: '90px', left: '50%', transform: 'translateX(-50%)',
+          padding: '10px 22px', background: 'rgba(0,217,255,0.15)',
+          border: '1px solid rgba(0,230,255,0.6)',
+          color: '#00e6ff', fontSize: '13px', letterSpacing: '0.1em',
+          backdropFilter: 'blur(8px)', zIndex: '9999',
+          boxShadow: '0 0 20px rgba(0,230,255,0.4)',
+          transition: 'all 0.3s', opacity: '0', pointerEvents: 'none',
+          fontFamily: 'Noto Sans SC, sans-serif',
+        });
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      t.style.top = '90px';
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.top = '70px';
+      }, 1800);
+    }
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

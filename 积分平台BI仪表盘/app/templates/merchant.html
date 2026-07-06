@@ -1,0 +1,94 @@
+{% extends "_base.html" %}
+{% block title %}商家监控{% endblock %}
+{% block page_title %}商家监控{% endblock %}
+{% block page_subtitle %}MERCHANT MONITORING{% endblock %}
+{% set active = 'merchant' %}
+
+{% block content %}
+<div class="page-hd">
+  <div>
+    <div class="ph-title">商家监控</div>
+    <div class="ph-sub">共 <span id="merchantCount">-</span> 个联盟商家 · 含 <span id="activeCount">-</span> 个在营 · <span id="disabledCount">-</span> 个已禁用</div>
+  </div>
+  <div class="ph-actions">
+    <button class="btn" id="btnExport">导出 CSV</button>
+    <button class="btn btn-primary" id="btnRefresh">刷新</button>
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi-card"><div class="kc-tag">TOTAL MERCHANTS</div><div class="kc-val" id="kpi-total">-</div><div class="kc-sub">联盟商家总数</div></div>
+  <div class="kpi-card"><div class="kc-tag">ACTIVE</div><div class="kc-val" id="kpi-active">-</div><div class="kc-sub">在营商家</div></div>
+  <div class="kpi-card"><div class="kc-tag">DISABLED</div><div class="kc-val" id="kpi-disabled">-</div><div class="kc-sub">已禁用商家</div></div>
+  <div class="kpi-card"><div class="kc-tag">PRODUCTS</div><div class="kc-val" id="kpi-products">-</div><div class="kc-sub">商家商品总数</div></div>
+</div>
+
+<div class="panel" style="flex:1; display:flex; flex-direction:column; min-height: 400px;">
+  <span class="pc-tr"></span><span class="pc-bl"></span>
+  <div class="panel-hd">
+    <div class="hd-l">
+      <span class="hd-num">01</span>
+      <div><div class="hd-title">商家列表</div><div class="hd-sub">点击行 → 钻取详情</div></div>
+    </div>
+    <div class="hd-r">
+      <input type="text" id="searchInput" placeholder="搜索商家名..." style="padding:4px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;outline:none;">
+    </div>
+  </div>
+  <div class="panel-bd" style="flex:1; overflow:auto;">
+    <table class="tbl" id="merchantTable">
+      <thead><tr>
+        <th>ID</th><th>中文名</th><th>英文名</th><th>状态</th><th>注册时间</th><th>操作</th>
+      </tr></thead>
+      <tbody><tr><td colspan="6" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(async function() {
+  async function load() {
+    const r = await fetch('/api/merchants');
+    const data = await r.json();
+    const tb = document.querySelector('#merchantTable tbody');
+    if (!data || data.length === 0) {
+      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#3d6299;padding:30px">暂无数据</td></tr>';
+      return;
+    }
+    const search = document.getElementById('searchInput').value.trim().toLowerCase();
+    const filtered = search ? data.filter(m => (m.BusinessCnName || '').toLowerCase().includes(search) || (m.BusinessEnName || '').toLowerCase().includes(search)) : data;
+    tb.innerHTML = filtered.map(m => `
+      <tr>
+        <td>${m.BusinessID}</td>
+        <td><strong>${m.BusinessCnName || ''}</strong></td>
+        <td>${m.BusinessEnName || ''}</td>
+        <td><span class="pill ${m.BusinessStatus===1?'pill-OK':'pill-DISABLED'}">${m.BusinessStatus===1?'在营':'已禁用'}</span></td>
+        <td>${m.CreateTime || ''}</td>
+        <td><a href="/merchant?id=${m.BusinessID}">查看详情 →</a></td>
+      </tr>
+    `).join('');
+    // KPI
+    const total = data.length;
+    const active = data.filter(m => m.BusinessStatus === 1).length;
+    document.getElementById('merchantCount').textContent = total;
+    document.getElementById('activeCount').textContent = active;
+    document.getElementById('disabledCount').textContent = total - active;
+    document.getElementById('kpi-total').textContent = total;
+    document.getElementById('kpi-active').textContent = active;
+    document.getElementById('kpi-disabled').textContent = total - active;
+    try {
+      const products = await fetch('/api/top_merchants').then(r=>r.json());
+      const pc = products.reduce((s,m)=>s + (m.EarnCoin>0?1:0), 0);
+      document.getElementById('kpi-products').textContent = products.length;
+    } catch(e) {}
+  }
+  document.getElementById('searchInput').addEventListener('input', load);
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  document.getElementById('btnExport').addEventListener('click', () => {
+    alert('CSV 导出已触发（演示）');
+  });
+  load();
+})();
+</script>
+{% endblock %}

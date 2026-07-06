@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}免费注册 · 金币联盟{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-eyebrow">JOIN US</div>
+  <h1 class="auth-title">新会员注册</h1>
+  <p style="text-align:center;color:var(--gold-deep);font-family:var(--font-mono);font-size:13px;letter-spacing:.15em;margin-bottom:28px;margin-top:-22px">
+    注册即送 1000 金币
+  </p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+        <div class="flash flash-{{ 'error' if cat == 'error' else 'ok' }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="post" novalidate>
+    <div class="field">
+      <label for="phone">手机号</label>
+      <input id="phone" name="phone" type="tel" inputmode="numeric"
+             pattern="\d{11}" maxlength="11" placeholder="请输入 11 位手机号" required>
+    </div>
+    <div class="field">
+      <label for="nickname">会员昵称（选填）</label>
+      <input id="nickname" name="nickname" type="text" maxlength="20" placeholder="为自己起个昵称">
+    </div>
+    <div class="field">
+      <label for="password">设置密码</label>
+      <input id="password" name="password" type="password" minlength="6" placeholder="至少 6 位" required>
+    </div>
+    <div class="field">
+      <label for="password2">确认密码</label>
+      <input id="password2" name="password2" type="password" minlength="6" placeholder="再输入一次" required>
+    </div>
+    <div class="auth-actions">
+      <button type="submit" class="btn btn-primary">立即注册</button>
+    </div>
+    <div class="auth-foot">
+      已注册？请<a href="{{ url_for('login') }}">直接登录</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

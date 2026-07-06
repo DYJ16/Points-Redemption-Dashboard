@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}我的收藏 · 金币联盟{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:50px">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">
+        <span class="num">05</span>
+        我的收藏
+      </h2>
+      <a href="{{ url_for('user_center') }}" class="section-link">返回个人中心</a>
+    </div>
+
+    {% if products %}
+    <div class="product-grid">
+      {% for p in products %}
+      <article class="product-card">
+        <div class="product-media">
+          <a href="{{ url_for('gift_detail', pid=p.id) }}">
+            <img src="{{ url_for('static', filename='img/products/' + p.cover) }}" alt="{{ p.name }}" loading="lazy">
+          </a>
+        </div>
+        <div class="product-body">
+          <a href="{{ url_for('gift_detail', pid=p.id) }}" class="product-name">{{ p.name }}</a>
+          <div class="product-price">
+            <span class="coin-amount">{{ p.price_coins }}<small>金币</small></span>
+          </div>
+          <div class="product-actions">
+            <a href="{{ url_for('gift_detail', pid=p.id) }}" class="btn btn-primary" style="flex:1">查看详情</a>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:80px 0;background:var(--cream);border:1px dashed var(--line);border-radius:var(--radius)">
+      <div style="font-size:48px;margin-bottom:14px">❤</div>
+      <h3 style="font-family:var(--font-display);font-size:24px;color:var(--ink);margin-bottom:8px">还没有收藏的好物</h3>
+      <p style="color:var(--ink-muted);margin-bottom:24px">去逛逛，挑几件喜欢的收藏起来</p>
+      <a href="{{ url_for('gift_list') }}" class="btn btn-primary">浏览好礼</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

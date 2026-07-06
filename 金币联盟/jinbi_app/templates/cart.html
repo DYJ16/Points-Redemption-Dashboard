@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}购物车 · 金币联盟{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:50px">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">
+        <span class="num">02</span>
+        我的购物车
+      </h2>
+      <a href="{{ url_for('gift_list') }}" class="section-link">继续兑换 →</a>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          <div class="flash flash-{{ 'error' if cat == 'error' else 'ok' }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% if items %}
+    <table class="cart-table">
+      <thead>
+        <tr>
+          <th style="width:55%">商品</th>
+          <th style="width:15%">单价</th>
+          <th style="width:15%">数量</th>
+          <th style="width:15%;text-align:right">小计</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for it in items %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:14px">
+              <img src="{{ url_for('static', filename='img/products/' + it.cover) }}" alt="">
+              <div>
+                <a href="{{ url_for('gift_detail', pid=it.id) }}" class="name">{{ it.name }}</a>
+                <div style="font-size:12px;color:var(--ink-muted);margin-top:4px">{{ it.category }}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="coin-amount" style="font-size:20px">{{ it.price_coins }}<small>金币</small></span></td>
+          <td>
+            <form method="post" action="{{ url_for('cart_update', cid=it.cid) }}" style="display:flex;gap:6px;align-items:center">
+              <input name="qty" type="number" min="1" value="{{ it.qty }}" style="width:64px;padding:6px;border:1px solid var(--line);border-radius:6px;text-align:center">
+              <button type="submit" class="btn btn-ghost" style="padding:6px 12px;font-size:12px">更新</button>
+            </form>
+          </td>
+          <td style="text-align:right">
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px">
+              <span class="coin-amount" style="font-size:22px">{{ it.price_coins * it.qty }}<small>金币</small></span>
+              <form method="post" action="{{ url_for('cart_remove', cid=it.cid) }}">
+                <button type="submit" class="btn btn-ghost" style="padding:4px 10px;font-size:12px;color:var(--ember)">移除</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="cart-summary">
+      <div>
+        <div style="font-size:13px;color:var(--ink-muted);letter-spacing:.05em">合计消耗</div>
+        <div class="total">{{ total }} <small style="font-size:14px;font-family:var(--font-body);color:var(--ink-muted);letter-spacing:.2em">金币</small></div>
+        <div style="font-size:12px;color:var(--ink-muted);margin-top:6px">您当前拥有 <strong style="color:var(--gold-deep)">{{ current_user.coins }}</strong> 金币</div>
+      </div>
+      <form method="post" action="{{ url_for('cart_checkout') }}" data-auto-submit>
+        <button type="submit" class="btn btn-gold" style="padding:16px 36px;font-size:15px">立即兑换</button>
+      </form>
+    </div>
+
+    {% else %}
+    <div style="text-align:center;padding:80px 0;background:var(--cream);border:1px dashed var(--line);border-radius:var(--radius)">
+      <div style="font-size:48px;margin-bottom:14px">🛒</div>
+      <h3 style="font-family:var(--font-display);font-size:24px;color:var(--ink);margin-bottom:8px">购物车空空如也</h3>
+      <p style="color:var(--ink-muted);margin-bottom:24px">去挑几件心仪的好物吧</p>
+      <a href="{{ url_for('gift_list') }}" class="btn btn-primary">浏览好礼</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

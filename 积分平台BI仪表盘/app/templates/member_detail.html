@@ -1,0 +1,106 @@
+{% extends "_base.html" %}
+{% block title %}会员详情 #{{ cust_id }}{% endblock %}
+{% block page_title %}会员详情 - #{{ cust_id }}{% endblock %}
+{% block page_subtitle %}MEMBER DETAIL{% endblock %}
+{% set active = 'member' %}
+
+{% block content %}
+<div class="page-hd">
+  <div>
+    <div class="ph-title"><a href="/member" style="color:var(--blue-text);text-decoration:none">← 返回会员列表</a> · 会员详情 <span id="mName" style="color:var(--cyan)">-</span></div>
+    <div class="ph-sub">会员 ID: <span id="mId">{{ cust_id }}</span> · 积分账户实时数据</div>
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi-card"><div class="kc-tag">VALID</div><div class="kc-val" id="kpi-valid">-</div><div class="kc-sub">可用积分</div></div>
+  <div class="kpi-card"><div class="kc-tag">FROZEN</div><div class="kc-val" id="kpi-frozen">-</div><div class="kc-sub">冻结积分</div></div>
+  <div class="kpi-card"><div class="kc-tag">ONWAY</div><div class="kc-val" id="kpi-onway">-</div><div class="kc-sub">在途积分</div></div>
+  <div class="kpi-card"><div class="kc-tag">HISTORY</div><div class="kc-val" id="kpi-history">-</div><div class="kc-sub">累计积分</div></div>
+</div>
+
+<div class="detail-grid">
+  <div class="panel" style="display:flex;flex-direction:column">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">01</span>
+        <div><div class="hd-title">基本信息</div><div class="hd-sub">PROFILE</div></div>
+      </div>
+    </div>
+    <div class="panel-bd" id="profileBox">
+      <div style="color:#3d6299;padding:20px">加载中...</div>
+    </div>
+  </div>
+
+  <div class="panel" style="display:flex;flex-direction:column">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">02</span>
+        <div><div class="hd-title">积分交易记录</div><div class="hd-sub">RECENT TRADES</div></div>
+      </div>
+    </div>
+    <div class="panel-bd" style="flex:1;overflow:auto; max-height: 320px;">
+      <table class="tbl" id="tradeTable">
+        <thead><tr><th>时间</th><th>类型</th><th>积分变动</th><th>订单</th><th>状态</th></tr></thead>
+        <tbody><tr><td colspan="5" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const custId = {{ cust_id|int if cust_id else 0 }};
+(async function() {
+  if (!custId) return;
+  // profile + account
+  const acc = await fetch('/api/top_members?limit=99999').then(r=>r.json());
+  const me = (acc || []).find(m => m.CustomerID == custId);
+  if (me) {
+    document.getElementById('mName').textContent = me.RealName || '';
+    document.getElementById('kpi-valid').textContent = (me.ValidCoin||0).toLocaleString();
+    document.getElementById('kpi-frozen').textContent = (me.FrozenCoin||0).toLocaleString();
+    document.getElementById('kpi-history').textContent = (me.HistoryCoin||0).toLocaleString();
+  }
+  // 基本信息 from members API
+  const list = await fetch('/api/members?size=99999').then(r=>r.json());
+  const m = (list.rows||[]).find(x => x.CustomerID == custId);
+  if (m) {
+    const html = `
+      <table class="tbl" style="font-size:12px">
+        <tr><td style="color:var(--blue-text-2);width:80px">姓名</td><td><strong>${m.RealName||'--'}</strong></td></tr>
+        <tr><td style="color:var(--blue-text-2)">登录名</td><td>${m.LoginName||'--'}</td></tr>
+        <tr><td style="color:var(--blue-text-2)">性别</td><td>${m.Gender===1?'男':m.Gender===2?'女':'--'}</td></tr>
+        <tr><td style="color:var(--blue-text-2)">电话</td><td>${m.Phone||'--'}</td></tr>
+        <tr><td style="color:var(--blue-text-2)">邮箱</td><td>${m.Email||'--'}</td></tr>
+        <tr><td style="color:var(--blue-text-2)">来源商家</td><td>${m.FromBusiness||'--'}</td></tr>
+        <tr><td style="color:var(--blue-text-2)">注册时间</td><td>${m.CreateTime||'--'}</td></tr>
+      </table>`;
+    document.getElementById('profileBox').innerHTML = html;
+  } else {
+    document.getElementById('profileBox').innerHTML = '<div style="color:#3d6299;padding:20px">未找到该会员</div>';
+  }
+  // 积分交易记录 (AccountTradeLog)
+  const r = await fetch('/api/all');
+  // 从现有 api 没暴露 trades，我们用 merchant_detail 模式不行；直接 fetch 一次新的
+  // 这里用 orders + member 关系显示
+  const orders = await fetch('/api/recent_orders?limit=200').then(r=>r.json());
+  const myOrders = (orders||[]).filter(o => o.RealName === (m ? m.RealName : ''));
+  const tb = document.querySelector('#tradeTable tbody');
+  if (myOrders.length) {
+    tb.innerHTML = myOrders.map(o => `
+      <tr><td>${o.CreateTime||''}</td>
+      <td>兑换</td>
+      <td class="num" style="color:var(--cyan)">+${(o.TotalCoin||0).toLocaleString()}</td>
+      <td>订单 #${o.OrderID}</td>
+      <td><span class="pill ${o.OrderStatus===3?'pill-OK':o.OrderStatus===2?'pill-pending':o.OrderStatus===4?'pill-HIGH':'pill-ACK'}">${o.StatusName||''}</span></td></tr>
+    `).join('');
+  } else {
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#3d6299;padding:20px">暂无积分交易</td></tr>';
+  }
+})();
+</script>
+{% endblock %}

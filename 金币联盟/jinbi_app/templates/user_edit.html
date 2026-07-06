@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}修改个人信息 · 金币联盟{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:50px">
+  <div class="container" style="max-width:780px">
+    <div class="section-head">
+      <h2 class="section-title">
+        <span class="num">04</span>
+        修改个人信息
+      </h2>
+      <a href="{{ url_for('user_center') }}" class="section-link">返回个人中心</a>
+    </div>
+
+    <div class="panel">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          {% for cat, msg in messages %}
+            <div class="flash flash-{{ 'error' if cat == 'error' else 'ok' }}">{{ msg }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <form method="post" novalidate>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+          <div class="field">
+            <label>会员昵称</label>
+            <input name="nickname" type="text" maxlength="20" value="{{ user.nickname or '' }}">
+          </div>
+          <div class="field">
+            <label>真实姓名</label>
+            <input name="real_name" type="text" maxlength="20" value="{{ user.real_name or '' }}">
+          </div>
+          <div class="field">
+            <label>性别</label>
+            <select name="gender">
+              <option value="">请选择</option>
+              {% for g in ['男','女','其他'] %}
+              <option value="{{ g }}" {% if user.gender == g %}selected{% endif %}>{{ g }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label>邮箱</label>
+            <input name="email" type="email" value="{{ user.email or '' }}">
+          </div>
+          <div class="field">
+            <label>省份</label>
+            <input name="province" type="text" value="{{ user.province or '' }}" placeholder="如：广东省">
+          </div>
+          <div class="field">
+            <label>城市</label>
+            <input name="city" type="text" value="{{ user.city or '' }}" placeholder="如：广州市">
+          </div>
+          <div class="field">
+            <label>地区</label>
+            <input name="district" type="text" value="{{ user.district or '' }}" placeholder="如：天河区">
+          </div>
+          <div class="field">
+            <label>生日</label>
+            <input name="birthday" type="date" value="{{ user.birthday or '' }}">
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;margin-top:18px">
+          <button type="submit" class="btn btn-primary" style="flex:1;padding:14px">保存修改</button>
+          <a href="{{ url_for('user_center') }}" class="btn btn-ghost" style="flex:1;padding:14px">取消</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

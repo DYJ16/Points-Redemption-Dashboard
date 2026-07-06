@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% block title %}金币兑礼 · 金币联盟{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:50px">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">
+        <span class="num">01</span>
+        金币兑礼
+      </h2>
+      <span class="section-meta">共 {{ products|length }} 件好礼</span>
+    </div>
+
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:32px">
+      <a href="{{ url_for('gift_list') }}"
+         class="btn {% if not current_category %}btn-primary{% else %}btn-ghost{% endif %}">全部</a>
+      {% for c in categories %}
+        <a href="{{ url_for('gift_list', category=c) }}"
+           class="btn {% if current_category == c %}btn-primary{% else %}btn-ghost{% endif %}">{{ c }}</a>
+      {% endfor %}
+    </div>
+
+    {% if products %}
+    <div class="product-grid">
+      {% for p in products %}
+      <article class="product-card">
+        <div class="product-media">
+          <a href="{{ url_for('gift_detail', pid=p.id) }}">
+            <img src="{{ url_for('static', filename='img/products/' + p.cover) }}" alt="{{ p.name }}" loading="lazy">
+          </a>
+          {% if p.tag %}<span class="product-tag">{{ p.tag }}</span>{% endif %}
+        </div>
+        <div class="product-body">
+          <a href="{{ url_for('gift_detail', pid=p.id) }}" class="product-name">{{ p.name }}</a>
+          <div class="product-price">
+            <span class="coin-amount">{{ p.price_coins }}<small>金币</small></span>
+          </div>
+          <div class="product-actions">
+            <a href="{{ url_for('gift_detail', pid=p.id) }}" class="btn btn-ghost">查看详情</a>
+            {% if current_user %}
+            <form method="post" action="{{ url_for('cart_add', pid=p.id) }}" data-auto-submit style="flex:1">
+              <button type="submit" class="btn btn-gold" style="width:100%">加入购物车</button>
+            </form>
+            {% else %}
+            <a href="{{ url_for('login') }}" class="btn btn-gold">登录兑换</a>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:80px 0;color:var(--ink-muted)">该分类暂无礼品</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "_base.html" %}
+{% block title %}系统管理{% endblock %}
+{% block page_title %}系统管理{% endblock %}
+{% block page_subtitle %}SYSTEM MANAGEMENT{% endblock %}
+{% set active = 'system' %}
+
+{% block content %}
+<div class="page-hd">
+  <div>
+    <div class="ph-title">系统管理</div>
+    <div class="ph-sub">服务器 / 数据库 / ETL 状态总览</div>
+  </div>
+  <div class="ph-actions">
+    <button class="btn btn-primary" id="btnRefresh">刷新</button>
+  </div>
+</div>
+
+<div class="detail-grid">
+  <div class="panel">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">01</span>
+        <div><div class="hd-title">服务器</div><div class="hd-sub">SERVER</div></div>
+      </div>
+    </div>
+    <div class="panel-bd">
+      <table class="tbl" id="serverTable">
+        <tbody><tr><td colspan="2" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">02</span>
+        <div><div class="hd-title">数据库</div><div class="hd-sub">DATABASE</div></div>
+      </div>
+    </div>
+    <div class="panel-bd">
+      <table class="tbl" id="dbTable">
+        <tbody><tr><td colspan="2" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">03</span>
+        <div><div class="hd-title">ETL 调度</div><div class="hd-sub">ETL</div></div>
+      </div>
+    </div>
+    <div class="panel-bd">
+      <table class="tbl" id="etlTable">
+        <tbody><tr><td colspan="2" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="panel">
+    <span class="pc-tr"></span><span class="pc-bl"></span>
+    <div class="panel-hd">
+      <div class="hd-l">
+        <span class="hd-num">04</span>
+        <div><div class="hd-title">Web 服务</div><div class="hd-sub">FLASK</div></div>
+      </div>
+    </div>
+    <div class="panel-bd">
+      <table class="tbl" id="flaskTable">
+        <tbody><tr><td colspan="2" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="display:flex;flex-direction:column; min-height: 280px;">
+  <span class="pc-tr"></span><span class="pc-bl"></span>
+  <div class="panel-hd">
+    <div class="hd-l">
+      <span class="hd-num">05</span>
+      <div><div class="hd-title">资源使用</div><div class="hd-sub">RESOURCE</div></div>
+    </div>
+  </div>
+  <div class="panel-bd" id="chart-resource" style="flex:1"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const chart = echarts.init(document.getElementById('chart-resource'));
+async function load() {
+  const r = await fetch('/api/system_info');
+  const data = await r.json();
+  const fill = (tbodyId, items) => {
+    document.querySelector('#' + tbodyId + ' tbody').innerHTML = items.map(([k,v]) =>
+      `<tr><td style="color:var(--blue-text-2);width:120px">${k}</td><td><strong style="color:var(--cyan)">${v}</strong></td></tr>`
+    ).join('');
+  };
+  fill('serverTable', Object.entries(data.server));
+  fill('dbTable', Object.entries(data.db));
+  fill('etlTable', Object.entries(data.etl));
+  fill('flaskTable', Object.entries(data.flask));
+  // 资源图
+  const parsePct = s => { const m = String(s).match(/(\d+)/); return m ? +m[1] : 0; };
+  const cpu = parsePct(data.server.cpu);
+  const mem = parsePct(data.server.mem);
+  const disk = parsePct(data.server.disk);
+  chart.setOption({
+    grid: { left: 50, right: 30, top: 20, bottom: 30 },
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: ['CPU', '内存', '磁盘'], axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }}, axisLabel: { color: '#94c8ff' } },
+    yAxis: { type: 'value', max: 100, name: '%', axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }}, axisLabel: { color: '#5a8bd6', formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(0,217,255,0.06)', type: 'dashed' }} },
+    series: [{
+      type: 'bar', data: [{ value: cpu, itemStyle: { color: cpu > 80 ? '#ff3e6c' : { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#94ffff'},{offset:1,color:'#00d9ff'}] }}}, { value: mem, itemStyle: { color: mem > 80 ? '#ff3e6c' : { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#7862ff'},{offset:1,color:'#a78bfa'}] }}}, { value: disk, itemStyle: { color: disk > 80 ? '#ff3e6c' : { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#ffae00'},{offset:1,color:'#ff8800'}] }}}],
+      barWidth: 60, label: { show: true, position: 'top', color: '#00e6ff', fontFamily: 'Manrope', fontWeight: 700, formatter: '{c}%' },
+    }],
+  });
+}
+window.addEventListener('resize', () => chart.resize());
+document.getElementById('btnRefresh').addEventListener('click', load);
+load();
+</script>
+{% endblock %}

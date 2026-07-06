@@ -1,0 +1,112 @@
+{% extends "_base.html" %}
+{% block title %}告警管理{% endblock %}
+{% block page_title %}告警管理{% endblock %}
+{% block page_subtitle %}ALERT MANAGEMENT{% endblock %}
+{% set active = 'alert' %}
+
+{% block content %}
+<div class="page-hd">
+  <div>
+    <div class="ph-title">告警管理</div>
+    <div class="ph-sub">系统自动检测异常 · 共 <span id="totalAlert">-</span> 条告警 · <span id="pendingAlert">-</span> 待处理</div>
+  </div>
+  <div class="ph-actions">
+    <select id="filterLevel" style="padding:5px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;font-family:inherit">
+      <option value="">全部等级</option>
+      <option value="HIGH">高危</option>
+      <option value="MEDIUM">中危</option>
+      <option value="LOW">低危</option>
+    </select>
+    <select id="filterStatus" style="padding:5px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;font-family:inherit">
+      <option value="">全部状态</option>
+      <option value="PENDING">待处理</option>
+      <option value="ACK">已确认</option>
+      <option value="CLOSED">已关闭</option>
+    </select>
+    <button class="btn btn-primary" id="btnRefresh">刷新</button>
+  </div>
+</div>
+
+<div class="kpi-row">
+  <div class="kpi-card"><div class="kc-tag">HIGH</div><div class="kc-val" id="kpi-high" style="color:var(--red)">-</div><div class="kc-sub">高危告警</div></div>
+  <div class="kpi-card"><div class="kc-tag">MEDIUM</div><div class="kc-val" id="kpi-medium" style="color:var(--orange)">-</div><div class="kc-sub">中危告警</div></div>
+  <div class="kpi-card"><div class="kc-tag">LOW</div><div class="kc-val" id="kpi-low">-</div><div class="kc-sub">低危告警</div></div>
+  <div class="kpi-card"><div class="kc-tag">PENDING</div><div class="kc-val" id="kpi-pending" style="color:var(--cyan)">-</div><div class="kc-sub">待处理</div></div>
+</div>
+
+<div class="panel" style="display:flex; flex-direction:column; min-height: 400px;">
+  <span class="pc-tr"></span><span class="pc-bl"></span>
+  <div class="panel-hd">
+    <div class="hd-l">
+      <span class="hd-num">01</span>
+      <div><div class="hd-title">告警列表</div><div class="hd-sub">点击处理 →</div></div>
+    </div>
+  </div>
+  <div class="panel-bd" style="flex:1; overflow:auto;">
+    <table class="tbl" id="alertTable">
+      <thead><tr>
+        <th>ID</th><th>等级</th><th>类型</th><th>来源</th><th>详情</th><th>时间</th><th>状态</th><th>操作</th>
+      </tr></thead>
+      <tbody><tr><td colspan="8" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allAlerts = [];
+function renderTable() {
+  const lvl = document.getElementById('filterLevel').value;
+  const st = document.getElementById('filterStatus').value;
+  const filtered = allAlerts.filter(a => (!lvl || a.Level === lvl) && (!st || a.Status === st));
+  const tb = document.querySelector('#alertTable tbody');
+  if (filtered.length === 0) {
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#3d6299;padding:30px">无告警 ✓ 系统正常</td></tr>';
+    return;
+  }
+  tb.innerHTML = filtered.map(a => `
+    <tr data-id="${a.AlertID}">
+      <td>#${a.AlertID}</td>
+      <td><span class="pill pill-${a.Level}">${a.Level}</span></td>
+      <td><strong>${a.Type||''}</strong></td>
+      <td style="color:var(--blue-text)">${a.Source||''}</td>
+      <td>${a.Detail||''}</td>
+      <td>${a.Time||''}</td>
+      <td><span class="pill pill-${a.Status}">${a.Status}</span></td>
+      <td>
+        ${a.Status==='PENDING' ? `<button class="btn btn-primary" onclick="ackAlert(${a.AlertID})">确认</button> <button class="btn" onclick="closeAlert(${a.AlertID})">关闭</button>` : '<span style="color:#5a8bd6">--</span>'}
+      </td>
+    </tr>
+  `).join('');
+}
+async function load() {
+  const r = await fetch('/api/alerts');
+  allAlerts = await r.json();
+  const high = allAlerts.filter(a => a.Level === 'HIGH').length;
+  const med = allAlerts.filter(a => a.Level === 'MEDIUM').length;
+  const low = allAlerts.filter(a => a.Level === 'LOW').length;
+  const pend = allAlerts.filter(a => a.Status === 'PENDING').length;
+  document.getElementById('totalAlert').textContent = allAlerts.length;
+  document.getElementById('pendingAlert').textContent = pend;
+  document.getElementById('kpi-high').textContent = high;
+  document.getElementById('kpi-medium').textContent = med;
+  document.getElementById('kpi-low').textContent = low;
+  document.getElementById('kpi-pending').textContent = pend;
+  renderTable();
+}
+window.ackAlert = function(id) {
+  const a = allAlerts.find(x => x.AlertID === id);
+  if (a) { a.Status = 'ACK'; renderTable(); alert(`告警 #${id} 已确认`); }
+};
+window.closeAlert = function(id) {
+  const a = allAlerts.find(x => x.AlertID === id);
+  if (a) { a.Status = 'CLOSED'; renderTable(); alert(`告警 #${id} 已关闭`); }
+};
+document.getElementById('filterLevel').addEventListener('change', renderTable);
+document.getElementById('filterStatus').addEventListener('change', renderTable);
+document.getElementById('btnRefresh').addEventListener('click', load);
+load();
+setInterval(load, 60000);
+</script>
+{% endblock %}
