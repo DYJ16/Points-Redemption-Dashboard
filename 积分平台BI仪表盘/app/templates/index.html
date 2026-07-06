@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1920, initial-scale=1.0">
+  <title>积分兑换平台数据总览</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Manrope:wght@500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/echarts-wordcloud@2.1.0/dist/echarts-wordcloud.min.js"></script>
+  <script src="/static/js/china.js"></script>
+</head>
+<body>
+  <!-- 顶部通栏 -->
+  <header class="topbar">
+    <div class="topbar-l">
+      <div class="clock">
+        <div class="date" id="dateText">2026-07-06 星期一</div>
+        <div class="time" id="timeText">--:--:--</div>
+      </div>
+    </div>
+    <div class="topbar-c">
+      <div class="title">积分兑换平台数据总览</div>
+      <div class="title-en">POINTS · DATA OVERVIEW</div>
+    </div>
+    <div class="topbar-r">
+      <div class="icon-btn" title="业务告警">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 21h20L12 2z"/><path d="M12 9v4M12 17h.01"/></svg>
+        <span class="badge">3</span>
+      </div>
+      <div class="icon-btn" title="系统消息">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-9 8.5 8.5 8.5 0 01-8.5-8.5A8.38 8.38 0 0112 3a8.5 8.5 0 019 8.5z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>
+      </div>
+      <div class="icon-btn" title="全局设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68 1.65 1.65 0 0010 3.17V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </div>
+      <div class="icon-btn" title="退出登录">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- 顶部 6 块 KPI -->
+    <section class="row kpi-row">
+      <div class="kpi">
+        <span class="corner-tr"></span><span class="corner-bl"></span>
+        <div class="kpi-tag">MERCHANTS</div>
+        <div class="kpi-val" id="k-merchant">0</div>
+        <div class="kpi-sub"><span>在营商家</span><span class="arrow">▲</span></div>
+      </div>
+      <div class="kpi">
+        <span class="corner-tr"></span><span class="corner-bl"></span>
+        <div class="kpi-tag">MEMBERS</div>
+        <div class="kpi-val" id="k-member">0</div>
+        <div class="kpi-sub"><span>活跃会员</span><span class="arrow">▲</span></div>
+      </div>
+      <div class="kpi">
+        <span class="corner-tr"></span><span class="corner-bl"></span>
+        <div class="kpi-tag">GIFTS</div>
+        <div class="kpi-val" id="k-gift">0</div>
+        <div class="kpi-sub"><span>在库礼品</span><span class="arrow">▲</span></div>
+      </div>
+      <div class="kpi">
+        <span class="corner-tr"></span><span class="corner-bl"></span>
+        <div class="kpi-tag">ORDERS</div>
+        <div class="kpi-val" id="k-order">0</div>
+        <div class="kpi-sub"><span>有效订单</span><span class="arrow">▲</span></div>
+      </div>
+      <div class="kpi">
+        <span class="corner-tr"></span><span class="corner-bl"></span>
+        <div class="kpi-tag">EARNED</div>
+        <div class="kpi-val" id="k-earn">0</div>
+        <div class="kpi-sub"><span>累计积分发放</span><span class="arrow">▲</span></div>
+      </div>
+      <div class="kpi">
+        <span class="corner-tr"></span><span class="corner-bl"></span>
+        <div class="kpi-tag">EXCHANGED</div>
+        <div class="kpi-val" id="k-total">0</div>
+        <div class="kpi-sub"><span>累计积分消费</span><span class="arrow">▲</span></div>
+      </div>
+    </section>
+
+    <!-- 第一行：3D 地图 / 趋势 / 礼品分类 -->
+    <section class="row r2">
+      <div class="panel p-map">
+        <span class="pc-tr"></span><span class="pc-bl"></span>
+        <div class="panel-hd">
+          <div class="hd-l">
+            <span class="hd-num">02</span>
+            <div><div class="hd-title">地域分布</div><div class="hd-sub">REGIONAL MAP</div></div>
+          </div>
+          <div class="hd-r"><span class="pulse-dot"></span><span>LIVE</span></div>
+        </div>
+        <div class="panel-bd">
+          <div class="map-wrap">
+            <div class="map-side">
+              <div class="side-label">CHANNEL</div>
+              <div class="side-item active" data-channel="all">全部渠道</div>
+              <div class="side-item" data-channel="offline">线下商家</div>
+              <div class="side-item" data-channel="online">线上商城</div>
+              <div class="side-item" data-channel="device">积分设备</div>
+            </div>
+            <div id="chart-map"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <span class="pc-tr"></span><span class="pc-bl"></span>
+        <div class="panel-hd">
+          <div class="hd-l">
+            <span class="hd-num">03</span>
+            <div><div class="hd-title">30 天交易趋势</div><div class="hd-sub">DAILY TREND</div></div>
+          </div>
+        </div>
+        <div class="panel-bd" id="chart-trend"></div>
+      </div>
+
+      <div class="panel">
+        <span class="pc-tr"></span><span class="pc-bl"></span>
+        <div class="panel-hd">
+          <div class="hd-l">
+            <span class="hd-num">04</span>
+            <div><div class="hd-title">礼品分类</div><div class="hd-sub">CATEGORY</div></div>
+          </div>
+        </div>
+        <div class="panel-bd" id="chart-pie"></div>
+      </div>
+    </section>
+
+    <!-- 第二行：组合图 / 商家榜 / 仪表 / 订单流 -->
+    <section class="row r3">
+      <div class="panel">
+        <span class="pc-tr"></span><span class="pc-bl"></span>
+        <div class="panel-hd">
+          <div class="hd-l">
+            <span class="hd-num">05</span>
+            <div><div class="hd-title">兑换时段 × 商家对比</div><div class="hd-sub">HOURLY × MERCHANTS</div></div>
+          </div>
+        </div>
+        <div class="panel-bd" id="chart-combo"></div>
+      </div>
+
+      <div class="panel">
+        <span class="pc-tr"></span><span class="pc-bl"></span>
+        <div class="panel-hd">
+          <div class="hd-l">
+            <span class="hd-num">06</span>
+            <div><div class="hd-title">商家积分榜</div><div class="hd-sub">TOP MERCHANTS</div></div>
+          </div>
+        </div>
+        <div class="panel-bd" id="chart-merch"></div>
+      </div>
+
+      <div class="panel">
+        <span class="pc-tr"></span><span class="pc-bl"></span>
+        <div class="panel-hd">
+          <div class="hd-l">
+            <span class="hd-num">07</span>
+            <div><div class="hd-title">积分生态健康度</div><div class="hd-sub">ECOSYSTEM</div></div>
+          </div>
+        </div>
+        <div class="panel-bd" id="chart-gauge"></div>
+      </div>
+
+      <div class="panel">
+        <span class="pc-tr"></span><span class="pc-bl"></span>
+        <div class="panel-hd">
+          <div class="hd-l">
+            <span class="hd-num">08</span>
+            <div><div class="hd-title">实时订单流</div><div class="hd-sub">LIVE STREAM</div></div>
+          </div>
+          <div class="hd-r"><span class="pulse-dot"></span><span>STREAMING</span></div>
+        </div>
+        <div class="panel-bd" id="recent-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 底部导航 -->
+  <nav class="footer-nav" id="footerNav">
+    <div class="nav-item active" data-page="overview">首页总览</div>
+    <div class="nav-item" data-page="merchant">商家监控</div>
+    <div class="nav-item" data-page="member">会员管理</div>
+    <div class="nav-item" data-page="etl">积分ETL分析</div>
+    <div class="nav-item" data-page="report">兑换报表</div>
+    <div class="nav-item" data-page="alert">告警管理</div>
+    <div class="nav-item" data-page="system">系统管理</div>
+  </nav>
+
+  <script src="/static/js/dashboard.js"></script>
+</body>
+</html>
