@@ -72,7 +72,7 @@ BI 大屏、报表、告警和系统监控
 
 | 首页 | 兑礼列表 |
 |---|---|
-| ![金币联盟首页](/img/jinbi-home.png) | ![金币兑礼列表](./img/jinbi-gift-list.png) |
+| ![金币联盟首页](./img/jinbi-home.png) | ![金币兑礼列表](./img/jinbi-gift-list.png) |
 
 | 商品详情 | 注册入口 |
 |---|---|
@@ -82,11 +82,11 @@ BI 大屏、报表、告警和系统监控
 
 | BI 首页总览 | 商家监控 |
 |---|---|
-| ![BI 首页总览](img/jinbi.png) | ![BI 商家监控](./img/bi-merchant-monitor.png) |
+| ![BI 首页总览](./img/jinbi.png) | ![BI 商家监控](./img/bi-merchant-monitor.png) |
 
 | 会员管理 | ETL 分析 |
 |---|---|
-| ![BI 会员管理](img/bi-member-management.png) | ![BI ETL 分析](img/bi-etl-analysis.png) |
+| ![BI 会员管理](./img/bi-member-management.png) | ![BI ETL 分析](./img/bi-etl-analysis.png) |
 
 | 兑换报表 | 系统资源监控 |
 |---|---|
