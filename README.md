@@ -82,7 +82,7 @@ BI 大屏、报表、告警和系统监控
 
 | BI 首页总览 | 商家监控 |
 |---|---|
-| ![BI 首页总览](./img/bi-dashboard-overview.png) | ![BI 商家监控](./img/bi-merchant-monitor.png) |
+| ![BI 首页总览](./img/jinbi.png) | ![BI 商家监控](./img/bi-merchant-monitor.png) |
 
 | 会员管理 | ETL 分析 |
 |---|---|
