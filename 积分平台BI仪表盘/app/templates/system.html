@@ -1,4 +1,4 @@
-{% extends "_base.html" %}
+﻿{% extends "_base.html" %}
 {% block title %}系统管理{% endblock %}
 {% block page_title %}系统管理{% endblock %}
 {% block page_subtitle %}SYSTEM MANAGEMENT{% endblock %}
@@ -8,120 +8,267 @@
 <div class="page-hd">
   <div>
     <div class="ph-title">系统管理</div>
-    <div class="ph-sub">服务器 / 数据库 / ETL 状态总览</div>
+    <div class="ph-sub">服务器 · 数据库 · ETL · Web 服务 实时状态总览</div>
   </div>
   <div class="ph-actions">
-    <button class="btn btn-primary" id="btnRefresh">刷新</button>
+    <button class="btn btn-primary" id="btnRefresh">⟳ 刷新</button>
   </div>
 </div>
 
-<div class="detail-grid">
-  <div class="panel">
-    <span class="pc-tr"></span><span class="pc-bl"></span>
-    <div class="panel-hd">
-      <div class="hd-l">
-        <span class="hd-num">01</span>
-        <div><div class="hd-title">服务器</div><div class="hd-sub">SERVER</div></div>
-      </div>
+<!-- 4 张概览卡 -->
+<div class="sys-overview">
+  <div class="sys-card" id="card-server">
+    <div class="sys-card-hd">
+      <span class="sys-num">01</span>
+      <div><div class="sys-title">服务器</div><div class="sys-sub">SERVER</div></div>
     </div>
-    <div class="panel-bd">
-      <table class="tbl" id="serverTable">
-        <tbody><tr><td colspan="2" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
-      </table>
-    </div>
+    <div class="sys-card-body" id="serverTable"></div>
   </div>
-
-  <div class="panel">
-    <span class="pc-tr"></span><span class="pc-bl"></span>
-    <div class="panel-hd">
-      <div class="hd-l">
-        <span class="hd-num">02</span>
-        <div><div class="hd-title">数据库</div><div class="hd-sub">DATABASE</div></div>
-      </div>
+  <div class="sys-card" id="card-db">
+    <div class="sys-card-hd">
+      <span class="sys-num">02</span>
+      <div><div class="sys-title">数据库</div><div class="sys-sub">DATABASE</div></div>
     </div>
-    <div class="panel-bd">
-      <table class="tbl" id="dbTable">
-        <tbody><tr><td colspan="2" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
-      </table>
-    </div>
+    <div class="sys-card-body" id="dbTable"></div>
   </div>
-
-  <div class="panel">
-    <span class="pc-tr"></span><span class="pc-bl"></span>
-    <div class="panel-hd">
-      <div class="hd-l">
-        <span class="hd-num">03</span>
-        <div><div class="hd-title">ETL 调度</div><div class="hd-sub">ETL</div></div>
-      </div>
+  <div class="sys-card" id="card-etl">
+    <div class="sys-card-hd">
+      <span class="sys-num">03</span>
+      <div><div class="sys-title">ETL 调度</div><div class="sys-sub">ETL</div></div>
     </div>
-    <div class="panel-bd">
-      <table class="tbl" id="etlTable">
-        <tbody><tr><td colspan="2" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
-      </table>
-    </div>
+    <div class="sys-card-body" id="etlTable"></div>
   </div>
-
-  <div class="panel">
-    <span class="pc-tr"></span><span class="pc-bl"></span>
-    <div class="panel-hd">
-      <div class="hd-l">
-        <span class="hd-num">04</span>
-        <div><div class="hd-title">Web 服务</div><div class="hd-sub">FLASK</div></div>
-      </div>
+  <div class="sys-card" id="card-flask">
+    <div class="sys-card-hd">
+      <span class="sys-num">04</span>
+      <div><div class="sys-title">Web 服务</div><div class="sys-sub">FLASK</div></div>
     </div>
-    <div class="panel-bd">
-      <table class="tbl" id="flaskTable">
-        <tbody><tr><td colspan="2" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
-      </table>
-    </div>
+    <div class="sys-card-body" id="flaskTable"></div>
   </div>
 </div>
 
-<div class="panel" style="display:flex;flex-direction:column; min-height: 280px;">
+<!-- 资源使用图表 -->
+<div class="panel sys-resource-panel">
   <span class="pc-tr"></span><span class="pc-bl"></span>
   <div class="panel-hd">
     <div class="hd-l">
       <span class="hd-num">05</span>
       <div><div class="hd-title">资源使用</div><div class="hd-sub">RESOURCE</div></div>
     </div>
+    <div class="hd-r"><span class="pulse-dot"></span><span>LIVE</span></div>
   </div>
-  <div class="panel-bd" id="chart-resource" style="flex:1"></div>
+  <div class="panel-bd sys-chart-bd">
+    <div id="chart-resource" style="width:100%; height:100%; min-height:380px;"></div>
+  </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
-const chart = echarts.init(document.getElementById('chart-resource'));
+let chart = null;
+let resourceTimer = null;
+let resourceSeed = null;
+const resourceHistory = Array.from({ length: 18 }, (_, i) => ({
+  t: String(i + 1).padStart(2, '0'),
+  flow: 34 + Math.round(Math.sin(i / 2) * 8 + Math.random() * 9),
+}));
+
+function renderKV(targetId, items) {
+  const html = items.map(([k, v]) =>
+    `<div class="kv-row-item"><span class="kv-k">${k}</span><span class="kv-v">${v}</span></div>`
+  ).join('');
+  document.getElementById(targetId).innerHTML = html;
+}
+
+function parseResourcePct(value) {
+  const matches = String(value || '').match(/(\d+)\s*%?/g);
+  return matches ? Math.min(100, +matches[matches.length - 1]) : 0;
+}
+
+function nextVirtualResource(data) {
+  const base = resourceSeed || {
+    cpu: parseResourcePct(data?.server?.cpu) || 28,
+    mem: parseResourcePct(data?.server?.mem) || 42,
+    disk: parseResourcePct(data?.server?.disk) || 57,
+    tick: 0,
+  };
+  base.tick += 1;
+  base.cpu = Math.max(16, Math.min(78, base.cpu + Math.sin(base.tick * 0.85) * 4 + (Math.random() - 0.5) * 8));
+  base.mem = Math.max(28, Math.min(86, base.mem + Math.sin(base.tick * 0.45) * 2 + (Math.random() - 0.48) * 4));
+  base.disk = Math.max(36, Math.min(74, base.disk + Math.sin(base.tick * 0.24) * 1.4 + (Math.random() - 0.5) * 2));
+  const flow = Math.max(22, Math.min(92, Math.round((base.cpu * 0.46 + base.mem * 0.34 + base.disk * 0.2) + Math.random() * 10)));
+  resourceHistory.push({ t: new Date().toLocaleTimeString('zh-CN', { hour12: false }).slice(3), flow });
+  if (resourceHistory.length > 18) resourceHistory.shift();
+  resourceSeed = base;
+  return {
+    labels: ['CPU', '内存', '磁盘'],
+    values: [Math.round(base.cpu), Math.round(base.mem), Math.round(base.disk)],
+    flow: resourceHistory.map(i => i.flow),
+    times: resourceHistory.map(i => i.t),
+  };
+}
+
+function renderResource(data) {
+  const el = document.getElementById('chart-resource');
+  if (!el) return;
+  if (!window.echarts) {
+    el.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#b8956a;font-size:13px">ECharts 加载失败，请检查网络</div>';
+    return;
+  }
+  // 确保容器有尺寸
+  const rect = el.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) {
+    // 等下一帧再试
+    requestAnimationFrame(() => renderResource(data));
+    return;
+  }
+  if (!chart) {
+    chart = echarts.init(el, null, { renderer: 'canvas' });
+  }
+  const virtual = nextVirtualResource(data);
+  chart.setOption({
+    animationDuration: 650,
+    animationDurationUpdate: 850,
+    animationEasingUpdate: 'quarticOut',
+    grid: [
+      { left: 54, right: '58%', top: 42, bottom: 46 },
+      { left: '50%', right: 28, top: 48, bottom: 46 },
+    ],
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: 'rgba(10,6,4,0.95)',
+      borderColor: 'rgba(255,184,64,0.5)',
+      textStyle: { color: '#f5e8c8' },
+      axisPointer: { lineStyle: { color: 'rgba(255,184,64,0.35)' } },
+    },
+    xAxis: [
+      {
+        type: 'category',
+        gridIndex: 0,
+        data: virtual.labels,
+        axisTick: { show: false },
+        axisLine: { lineStyle: { color: 'rgba(255,184,64,0.22)' }},
+        axisLabel: { color: '#f0d28a', fontSize: 13, fontFamily: 'Manrope' },
+      },
+      {
+        type: 'category',
+        gridIndex: 1,
+        boundaryGap: false,
+        data: virtual.times,
+        axisTick: { show: false },
+        axisLine: { lineStyle: { color: 'rgba(255,184,64,0.18)' }},
+        axisLabel: { color: '#8f7046', fontSize: 10, interval: 4 },
+      }
+    ],
+    yAxis: [
+      {
+        type: 'value',
+        gridIndex: 0,
+        max: 100,
+        name: '%',
+        nameTextStyle: { color: '#7a6240', fontSize: 10 },
+        axisLabel: { color: '#b8956a', formatter: '{value}%' },
+        splitLine: { lineStyle: { color: 'rgba(255,184,64,0.07)', type: 'dashed' }},
+      },
+      {
+        type: 'value',
+        gridIndex: 1,
+        max: 100,
+        axisLabel: { color: '#8f7046', formatter: '{value}%' },
+        splitLine: { lineStyle: { color: 'rgba(255,184,64,0.06)' }},
+      }
+    ],
+    graphic: [
+      { type: 'text', left: '50%', top: 16, style: { text: '实时负载波动', fill: '#f0d28a', font: '600 13px Manrope' } },
+      { type: 'text', left: 58, top: 16, style: { text: '虚拟资源占用', fill: '#f0d28a', font: '600 13px Manrope' } },
+    ],
+    series: [
+      {
+        name: '占用率',
+        type: 'bar',
+        xAxisIndex: 0,
+        yAxisIndex: 0,
+        data: virtual.values.map((value, index) => ({
+          value,
+          itemStyle: {
+            color: value > 80
+              ? '#ff5a4e'
+              : [
+                  new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#ffe4a8'},{offset:1,color:'#d6891f'}]),
+                  new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#d4a85a'},{offset:1,color:'#e8c068'}]),
+                  new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#ffae00'},{offset:1,color:'#ff6a1a'}]),
+                ][index],
+          }
+        })),
+        barWidth: 58,
+        showBackground: true,
+        backgroundStyle: { color: 'rgba(255,184,64,0.045)' },
+        label: {
+          show: true,
+          position: 'top',
+          color: '#ffb840',
+          fontFamily: 'Manrope',
+          fontWeight: 700,
+          fontSize: 14,
+          formatter: '{c}%',
+        },
+      },
+      {
+        name: '活动强度',
+        type: 'line',
+        xAxisIndex: 1,
+        yAxisIndex: 1,
+        smooth: true,
+        symbol: 'circle',
+        symbolSize: 6,
+        data: virtual.flow,
+        lineStyle: { width: 3, color: '#ffb840', shadowColor: 'rgba(255,184,64,0.55)', shadowBlur: 10 },
+        itemStyle: { color: '#ffe4a8', borderColor: '#ff8c2a', borderWidth: 2 },
+        areaStyle: {
+          color: new echarts.graphic.LinearGradient(0,0,0,1,[
+            { offset: 0, color: 'rgba(255,184,64,0.28)' },
+            { offset: 1, color: 'rgba(255,184,64,0.02)' },
+          ])
+        },
+        markPoint: {
+          symbol: 'circle',
+          symbolSize: 11,
+          data: [{ type: 'max', name: '峰值' }],
+          itemStyle: { color: '#6ee06b', shadowBlur: 12, shadowColor: 'rgba(110,224,107,0.5)' },
+          label: { show: false },
+        }
+      }
+    ],
+  }, {
+    notMerge: false,
+    lazyUpdate: true,
+  });
+  if (resourceTimer) clearInterval(resourceTimer);
+  resourceTimer = setInterval(() => renderResource(data), 1800);
+  chart.resize();
+}
+
+function startResourceAnimation(data) {
+  renderResource(data);
+  if (resourceTimer) clearInterval(resourceTimer);
+  resourceTimer = setInterval(() => renderResource(data), 1800);
+}
+
 async function load() {
   const r = await fetch('/api/system_info');
   const data = await r.json();
-  const fill = (tbodyId, items) => {
-    document.querySelector('#' + tbodyId + ' tbody').innerHTML = items.map(([k,v]) =>
-      `<tr><td style="color:var(--blue-text-2);width:120px">${k}</td><td><strong style="color:var(--cyan)">${v}</strong></td></tr>`
-    ).join('');
-  };
-  fill('serverTable', Object.entries(data.server));
-  fill('dbTable', Object.entries(data.db));
-  fill('etlTable', Object.entries(data.etl));
-  fill('flaskTable', Object.entries(data.flask));
-  // 资源图
-  const parsePct = s => { const m = String(s).match(/(\d+)/); return m ? +m[1] : 0; };
-  const cpu = parsePct(data.server.cpu);
-  const mem = parsePct(data.server.mem);
-  const disk = parsePct(data.server.disk);
-  chart.setOption({
-    grid: { left: 50, right: 30, top: 20, bottom: 30 },
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: ['CPU', '内存', '磁盘'], axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }}, axisLabel: { color: '#94c8ff' } },
-    yAxis: { type: 'value', max: 100, name: '%', axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }}, axisLabel: { color: '#5a8bd6', formatter: '{value}%' }, splitLine: { lineStyle: { color: 'rgba(0,217,255,0.06)', type: 'dashed' }} },
-    series: [{
-      type: 'bar', data: [{ value: cpu, itemStyle: { color: cpu > 80 ? '#ff3e6c' : { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#94ffff'},{offset:1,color:'#00d9ff'}] }}}, { value: mem, itemStyle: { color: mem > 80 ? '#ff3e6c' : { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#7862ff'},{offset:1,color:'#a78bfa'}] }}}, { value: disk, itemStyle: { color: disk > 80 ? '#ff3e6c' : { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#ffae00'},{offset:1,color:'#ff8800'}] }}}],
-      barWidth: 60, label: { show: true, position: 'top', color: '#00e6ff', fontFamily: 'Manrope', fontWeight: 700, formatter: '{c}%' },
-    }],
-  });
+  renderKV('serverTable', Object.entries(data.server));
+  renderKV('dbTable', Object.entries(data.db));
+  renderKV('etlTable', Object.entries(data.etl));
+  renderKV('flaskTable', Object.entries(data.flask));
+  startResourceAnimation(data);
 }
-window.addEventListener('resize', () => chart.resize());
+// 等 DOM + ECharts 加载完成后再初始化
+window.addEventListener('load', () => {
+  load();
+  setInterval(load, 30000);
+  window.addEventListener('resize', () => chart && chart.resize());
+});
 document.getElementById('btnRefresh').addEventListener('click', load);
-load();
 </script>
 {% endblock %}

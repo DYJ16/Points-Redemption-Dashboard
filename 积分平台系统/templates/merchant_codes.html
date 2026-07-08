@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}积分码管理 · 金币联盟{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:50px">
+  <div class="container" style="max-width:960px">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          <div class="flash flash-{{ 'error' if cat == 'error' else 'ok' }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="section-head">
+      <h2 class="section-title">
+        <span class="num">M.</span>
+        积分码管理 · {{ merchant.shop_name }}
+      </h2>
+      <a href="{{ url_for('merchant_panel') }}" class="section-link">← 返回控制台</a>
+    </div>
+
+    <div class="panel" style="margin-bottom:28px;border:1px dashed var(--gold)">
+      <h3 class="panel-title" style="color:var(--gold-deep)">批量生成积分码</h3>
+      <p style="color:var(--ink-muted);font-size:13px;margin-bottom:16px">
+        选择面值和数量，一键生成。生成的码会出现在下方的列表中,可复制发送给会员。
+      </p>
+      <form method="post" style="display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end">
+        <div>
+          <label style="font-size:12px;color:var(--ink-muted);letter-spacing:.1em;display:block;margin-bottom:6px">面值（金币）</label>
+          <input name="amount" type="number" value="100" min="50" max="999999" required
+                 style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--paper);font-family:var(--font-mono);font-size:16px;color:var(--ink)">
+        </div>
+        <div>
+          <label style="font-size:12px;color:var(--ink-muted);letter-spacing:.1em;display:block;margin-bottom:6px">生成数量</label>
+          <input name="count" type="number" value="10" min="1" max="200" required
+                 style="width:100%;padding:12px 14px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--paper);font-family:var(--font-mono);font-size:16px;color:var(--ink)">
+        </div>
+        <button type="submit" class="btn btn-gold" style="height:46px">生成</button>
+      </form>
+    </div>
+
+    <h3 class="panel-title" style="margin-top:30px">最近 100 张积分码</h3>
+
+    {% if codes %}
+    <table class="user-table" style="background:var(--paper);border-radius:var(--radius-sm);overflow:hidden">
+      <thead>
+        <tr>
+          <th style="text-align:left">积分码</th>
+          <th style="text-align:left">面值</th>
+          <th style="text-align:left">状态</th>
+          <th style="text-align:left">核销时间</th>
+          <th style="text-align:left">创建时间</th>
+          <th style="text-align:left">操作</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in codes %}
+        <tr>
+          <td style="font-family:var(--font-mono);font-size:14px;color:var(--ink)">{{ c.code }}</td>
+          <td><span class="coin-amount" style="font-size:16px">{{ c.coin_amount }}</span></td>
+          <td>
+            {% if c.status == 'unused' %}
+              <span style="color:var(--gold-deep);font-size:13px">● 未使用</span>
+            {% elif c.status == 'used' %}
+              <span style="color:var(--ink-muted);font-size:13px">● 已使用</span>
+            {% else %}
+              <span style="color:var(--ember);font-size:13px">● {{ c.status }}</span>
+            {% endif %}
+          </td>
+          <td style="font-size:12px;color:var(--ink-muted)">{{ c.used_at[:16] if c.used_at else '—' }}</td>
+          <td style="font-size:12px;color:var(--ink-muted)">{{ c.created_at[:16] }}</td>
+          <td>
+            {% if c.status == 'unused' %}
+            <button class="btn btn-ghost" style="font-size:12px;padding:6px 12px"
+                    onclick="navigator.clipboard.writeText('{{ c.code }}');this.textContent='已复制';setTimeout(()=>this.textContent='复制',1200)">
+              复制
+            </button>
+            {% else %}
+            <span style="color:var(--ink-muted);font-size:12px">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div style="text-align:center;padding:40px;color:var(--ink-muted);background:var(--paper);border-radius:var(--radius)">
+      暂未生成过积分码
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

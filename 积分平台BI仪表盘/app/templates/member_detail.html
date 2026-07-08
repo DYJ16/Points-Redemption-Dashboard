@@ -1,4 +1,4 @@
-{% extends "_base.html" %}
+﻿{% extends "_base.html" %}
 {% block title %}会员详情 #{{ cust_id }}{% endblock %}
 {% block page_title %}会员详情 - #{{ cust_id }}{% endblock %}
 {% block page_subtitle %}MEMBER DETAIL{% endblock %}
@@ -29,7 +29,7 @@
       </div>
     </div>
     <div class="panel-bd" id="profileBox">
-      <div style="color:#3d6299;padding:20px">加载中...</div>
+      <div style="color:#7a6240;padding:20px">加载中...</div>
     </div>
   </div>
 
@@ -44,7 +44,7 @@
     <div class="panel-bd" style="flex:1;overflow:auto; max-height: 320px;">
       <table class="tbl" id="tradeTable">
         <thead><tr><th>时间</th><th>类型</th><th>积分变动</th><th>订单</th><th>状态</th></tr></thead>
-        <tbody><tr><td colspan="5" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+        <tbody><tr><td colspan="5" style="text-align:center;color:#7a6240;padding:30px">加载中...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -81,7 +81,7 @@ const custId = {{ cust_id|int if cust_id else 0 }};
       </table>`;
     document.getElementById('profileBox').innerHTML = html;
   } else {
-    document.getElementById('profileBox').innerHTML = '<div style="color:#3d6299;padding:20px">未找到该会员</div>';
+    document.getElementById('profileBox').innerHTML = '<div style="color:#7a6240;padding:20px">未找到该会员</div>';
   }
   // 积分交易记录 (AccountTradeLog)
   const r = await fetch('/api/all');
@@ -99,7 +99,7 @@ const custId = {{ cust_id|int if cust_id else 0 }};
       <td><span class="pill ${o.OrderStatus===3?'pill-OK':o.OrderStatus===2?'pill-pending':o.OrderStatus===4?'pill-HIGH':'pill-ACK'}">${o.StatusName||''}</span></td></tr>
     `).join('');
   } else {
-    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#3d6299;padding:20px">暂无积分交易</td></tr>';
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#7a6240;padding:20px">暂无积分交易</td></tr>';
   }
 })();
 </script>

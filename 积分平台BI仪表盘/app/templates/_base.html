@@ -23,19 +23,19 @@
       <div class="title-en">{% block page_subtitle %}SUB PAGE{% endblock %}</div>
     </div>
     <div class="topbar-r">
+      <a href="/alert" class="icon-btn" title="业务告警">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 21h20L12 2z"/><path d="M12 9v4M12 17h.01"/></svg>
+        <span class="badge" id="alertBadge">3</span>
+      </a>
+      <a href="/report" class="icon-btn" title="兑换报表">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>
+      </a>
+      <a href="/system" class="icon-btn" title="系统设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68 1.65 1.65 0 0010 3.17V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      </a>
       <a href="/" class="icon-btn" title="返回首页">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
       </a>
-      <div class="icon-btn" title="业务告警">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 21h20L12 2z"/><path d="M12 9v4M12 17h.01"/></svg>
-        <span class="badge">3</span>
-      </div>
-      <div class="icon-btn" title="系统消息">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 01-9 8.5 8.5 8.5 0 01-8.5-8.5A8.38 8.38 0 0112 3a8.5 8.5 0 019 8.5z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>
-      </a>
-      <div class="icon-btn" title="全局设置">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68 1.65 1.65 0 0010 3.17V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.32 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
-      </div>
     </div>
   </header>
 
@@ -66,11 +66,18 @@
     }
     setInterval(tickClock, 1000); tickClock();
 
-    // 顶部图标
-    document.querySelectorAll('.topbar-r .icon-btn[title]').forEach(btn => {
-      if (btn.tagName === 'A') return;
-      btn.addEventListener('click', () => showToast('【' + (btn.getAttribute('title') || '') + '】演示版未启用'));
-    });
+    // 顶部告警徽标：实时从 /api/alerts 拉取 PENDING 数量
+    (function() {
+      const badge = document.getElementById('alertBadge');
+      if (!badge) return;
+      const refresh = () => fetch('/api/alerts').then(r => r.json()).then(rows => {
+        const n = (rows || []).filter(a => a.Status === 'PENDING').length;
+        if (n > 0) { badge.textContent = n; badge.style.display = ''; }
+        else { badge.style.display = 'none'; }
+      }).catch(() => {});
+      refresh();
+      setInterval(refresh, 60000);
+    })();
 
     // Toast
     function showToast(msg) {
@@ -80,11 +87,11 @@
         t.id = '__toast';
         Object.assign(t.style, {
           position: 'fixed', top: '90px', left: '50%', transform: 'translateX(-50%)',
-          padding: '10px 22px', background: 'rgba(0,217,255,0.15)',
-          border: '1px solid rgba(0,230,255,0.6)',
-          color: '#00e6ff', fontSize: '13px', letterSpacing: '0.1em',
+          padding: '10px 22px', background: 'rgba(255,184,64,0.15)',
+          border: '1px solid rgba(255,184,64,0.6)',
+          color: '#ffb840', fontSize: '13px', letterSpacing: '0.1em',
           backdropFilter: 'blur(8px)', zIndex: '9999',
-          boxShadow: '0 0 20px rgba(0,230,255,0.4)',
+          boxShadow: '0 0 20px rgba(255,184,64,0.4)',
           transition: 'all 0.3s', opacity: '0', pointerEvents: 'none',
           fontFamily: 'Noto Sans SC, sans-serif',
         });

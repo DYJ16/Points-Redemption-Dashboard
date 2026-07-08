@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}商家入驻 · 金币联盟{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-eyebrow">MERCHANT JOIN</div>
+  <h1 class="auth-title">商家入驻</h1>
+  <p style="text-align:center;color:var(--gold-deep);font-family:var(--font-mono);font-size:13px;letter-spacing:.15em;margin-bottom:28px;margin-top:-22px">
+    审核通过后即可发放积分码
+  </p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+        <div class="flash flash-{{ 'error' if cat == 'error' else 'ok' }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="post" novalidate>
+    <div class="field">
+      <label for="phone">联系手机号（登录账号）</label>
+      <input id="phone" name="phone" type="tel" inputmode="numeric"
+             pattern="\d{11}" maxlength="11" placeholder="请输入 11 位手机号" required>
+    </div>
+    <div class="field">
+      <label for="shop_name">店铺名称（须唯一）</label>
+      <input id="shop_name" name="shop_name" type="text" maxlength="40" placeholder="如：金钻数码旗舰店" required>
+    </div>
+    <div class="field">
+      <label for="contact_name">联系人姓名</label>
+      <input id="contact_name" name="contact_name" type="text" maxlength="20" placeholder="如：张老板">
+    </div>
+    <div class="field">
+      <label for="category">主营品类</label>
+      <select id="category" name="category" style="width:100%;padding:14px 16px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--paper);font-family:var(--font-body);font-size:15px;color:var(--ink)">
+        <option value="">请选择</option>
+        <option value="数码电子">数码电子</option>
+        <option value="家居生活">家居生活</option>
+        <option value="时尚穿搭">时尚穿搭</option>
+        <option value="运动户外">运动户外</option>
+        <option value="美食零食">美食零食</option>
+        <option value="美妆个护">美妆个护</option>
+        <option value="图书文创">图书文创</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="address">店铺地址</label>
+      <input id="address" name="address" type="text" maxlength="80" placeholder="如：深圳市南山区科技园路 88 号">
+    </div>
+    <div class="field">
+      <label for="description">店铺简介</label>
+      <textarea id="description" name="description" maxlength="200" rows="3"
+                placeholder="简要介绍店铺特色，限 200 字"></textarea>
+    </div>
+    <div class="field">
+      <label for="password">设置登录密码</label>
+      <input id="password" name="password" type="password" minlength="6" placeholder="至少 6 位" required>
+    </div>
+    <div class="field">
+      <label for="password2">确认密码</label>
+      <input id="password2" name="password2" type="password" minlength="6" placeholder="再输入一次" required>
+    </div>
+    <div class="auth-actions">
+      <button type="submit" class="btn btn-primary">提交入驻申请</button>
+    </div>
+    <div class="auth-foot">
+      已有商家账号？请<a href="{{ url_for('merchant_login') }}">直接登录</a> ·
+      会员请<a href="{{ url_for('login') }}">前往会员入口</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

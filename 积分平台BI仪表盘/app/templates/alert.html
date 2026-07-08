@@ -1,4 +1,4 @@
-{% extends "_base.html" %}
+﻿{% extends "_base.html" %}
 {% block title %}告警管理{% endblock %}
 {% block page_title %}告警管理{% endblock %}
 {% block page_subtitle %}ALERT MANAGEMENT{% endblock %}
@@ -11,13 +11,13 @@
     <div class="ph-sub">系统自动检测异常 · 共 <span id="totalAlert">-</span> 条告警 · <span id="pendingAlert">-</span> 待处理</div>
   </div>
   <div class="ph-actions">
-    <select id="filterLevel" style="padding:5px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;font-family:inherit">
+    <select id="filterLevel" style="padding:5px 10px;background:rgba(255,184,64,0.06);border:1px solid var(--cyan-soft);color:#f5e8c8;font-size:12px;border-radius:2px;font-family:inherit">
       <option value="">全部等级</option>
       <option value="HIGH">高危</option>
       <option value="MEDIUM">中危</option>
       <option value="LOW">低危</option>
     </select>
-    <select id="filterStatus" style="padding:5px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;font-family:inherit">
+    <select id="filterStatus" style="padding:5px 10px;background:rgba(255,184,64,0.06);border:1px solid var(--cyan-soft);color:#f5e8c8;font-size:12px;border-radius:2px;font-family:inherit">
       <option value="">全部状态</option>
       <option value="PENDING">待处理</option>
       <option value="ACK">已确认</option>
@@ -47,7 +47,7 @@
       <thead><tr>
         <th>ID</th><th>等级</th><th>类型</th><th>来源</th><th>详情</th><th>时间</th><th>状态</th><th>操作</th>
       </tr></thead>
-      <tbody><tr><td colspan="8" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+      <tbody><tr><td colspan="8" style="text-align:center;color:#7a6240;padding:30px">加载中...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -62,7 +62,7 @@ function renderTable() {
   const filtered = allAlerts.filter(a => (!lvl || a.Level === lvl) && (!st || a.Status === st));
   const tb = document.querySelector('#alertTable tbody');
   if (filtered.length === 0) {
-    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#3d6299;padding:30px">无告警 ✓ 系统正常</td></tr>';
+    tb.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#7a6240;padding:30px">无告警 ✓ 系统正常</td></tr>';
     return;
   }
   tb.innerHTML = filtered.map(a => `
@@ -75,7 +75,7 @@ function renderTable() {
       <td>${a.Time||''}</td>
       <td><span class="pill pill-${a.Status}">${a.Status}</span></td>
       <td>
-        ${a.Status==='PENDING' ? `<button class="btn btn-primary" onclick="ackAlert(${a.AlertID})">确认</button> <button class="btn" onclick="closeAlert(${a.AlertID})">关闭</button>` : '<span style="color:#5a8bd6">--</span>'}
+        ${a.Status==='PENDING' ? `<button class="btn btn-primary" onclick="ackAlert(${a.AlertID})">确认</button> <button class="btn" onclick="closeAlert(${a.AlertID})">关闭</button>` : '<span style="color:#b8956a">--</span>'}
       </td>
     </tr>
   `).join('');

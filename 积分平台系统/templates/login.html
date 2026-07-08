@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}会员 / 商家登录 · 金币联盟{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-eyebrow">SIGN IN</div>
+  <h1 class="auth-title">欢迎回到金币联盟</h1>
+  <p style="text-align:center;color:var(--gold-deep);font-family:var(--font-mono);font-size:13px;letter-spacing:.15em;margin-bottom:28px;margin-top:-22px">
+    会员 / 商家统一入口 · 自动识别身份
+  </p>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+        <div class="flash flash-{{ 'error' if cat == 'error' else 'ok' }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="post" novalidate>
+    <div class="field">
+      <label for="phone">手机号</label>
+      <input id="phone" name="phone" type="tel" inputmode="numeric"
+             pattern="\d{11}" maxlength="11" placeholder="请输入 11 位手机号" required>
+    </div>
+    <div class="field">
+      <label for="password">密码</label>
+      <input id="password" name="password" type="password" minlength="6"
+             placeholder="至少 6 位" required>
+    </div>
+    <div class="field" style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-muted)">
+      <input id="remember" name="remember" type="checkbox" style="width:auto">
+      <label for="remember" style="margin:0;cursor:pointer">记住登录状态</label>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:8px">
+      <button type="submit" name="as_role" value="" class="btn btn-primary" style="flex:1">会员登录</button>
+      <button type="submit" name="as_role" value="merchant" class="btn btn-gold" style="flex:1">商家登录</button>
+    </div>
+    <p style="font-size:11px;color:var(--ink-muted);text-align:center;margin-bottom:18px">
+      会员点"会员登录" · 商家点"商家登录"<br>若只点登录按钮，系统会自动根据手机号识别身份
+    </p>
+  </form>
+
+  <div style="margin-top:24px;padding:20px;background:var(--cream);border-radius:var(--radius);border:1px dashed var(--line)">
+    <div style="font-family:var(--font-display);font-size:18px;color:var(--ink);margin-bottom:12px;letter-spacing:.05em">
+      ⓘ 演示账号 · 直接登录
+    </div>
+    <table style="width:100%;font-size:12px;border-collapse:collapse">
+      <thead>
+        <tr style="color:var(--ink-muted);text-align:left">
+          <th style="padding:6px 0;font-weight:500">身份</th>
+          <th style="padding:6px 0;font-weight:500">手机号</th>
+          <th style="padding:6px 0;font-weight:500">密码</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="border-top:1px solid var(--line)">
+          <td style="padding:7px 0;color:var(--ink)">演示会员</td>
+          <td style="padding:7px 0;font-family:var(--font-mono)">13800000000</td>
+          <td style="padding:7px 0;font-family:var(--font-mono);color:var(--gold-deep);font-weight:600">demo123</td>
+        </tr>
+        <tr style="border-top:1px solid var(--line)">
+          <td style="padding:7px 0;color:var(--ink)">金钻数码</td>
+          <td style="padding:7px 0;font-family:var(--font-mono)">13900000001</td>
+          <td style="padding:7px 0;font-family:var(--font-mono);color:var(--gold-deep);font-weight:600">123456</td>
+        </tr>
+        <tr style="border-top:1px solid var(--line)">
+          <td style="padding:7px 0;color:var(--ink)">优品家居</td>
+          <td style="padding:7px 0;font-family:var(--font-mono)">13900000002</td>
+          <td style="padding:7px 0;font-family:var(--font-mono);color:var(--gold-deep);font-weight:600">123456</td>
+        </tr>
+        <tr style="border-top:1px solid var(--line)">
+          <td style="padding:7px 0;color:var(--ink)">潮流穿搭</td>
+          <td style="padding:7px 0;font-family:var(--font-mono)">13900000003</td>
+          <td style="padding:7px 0;font-family:var(--font-mono);color:var(--gold-deep);font-weight:600">123456</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="auth-foot">
+    还没账号？
+    <a href="{{ url_for('register') }}">会员注册</a> ·
+    <a href="{{ url_for('merchant_register') }}">商家入驻</a>
+  </div>
+</div>
+{% endblock %}

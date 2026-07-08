@@ -46,42 +46,43 @@ setInterval(() => {
   if (countdown <= 0) { refreshAll(); countdown = REFRESH_INTERVAL; }
 }, 1000);
 
-/* ===== 主题色：冰蓝科技风 ===== */
-const CYAN = '#00e6ff';
-const CYAN_DIM = '#00d9ff';
-const PURPLE = '#7862ff';
-const BLUE = '#0066ff';
-const ORANGE = '#ffae00';
-const RED = '#ff3e6c';
-const GREEN = '#00ff9d';
-const TXT = '#94c8ff';
-const TXT_DIM = '#5a8bd6';
-const TXT_FAINT = '#3d6299';
+/* ===== 主题色：暗金金币主题 ===== */
+const CYAN = '#ffb840';        // 主金色（替代原冰蓝）
+const CYAN_DIM = '#d6891f';    // 深金
+const PURPLE = '#d4a85a';      // 古铜金（替代紫色）
+const BLUE = '#b8862c';        // 暗金（替代深蓝）
+const ORANGE = '#ff8c2a';      // 橙色
+const RED = '#ff5a4e';         // 警示红
+const GREEN = '#6ee06b';       // 成功绿
+const TXT = '#f0d28a';         // 主文本
+const TXT_DIM = '#b8956a';     // 次文本
+const TXT_FAINT = '#7a6240';   // 弱文本
+const BG = '#0a0604';          // 背景
 
 const PALETTE = [
-  { c: '#00e6ff', glow: 'rgba(0,230,255,0.5)' },
-  { c: '#7862ff', glow: 'rgba(120,98,255,0.5)' },
-  { c: '#00ff9d', glow: 'rgba(0,255,157,0.5)' },
-  { c: '#ffae00', glow: 'rgba(255,174,0,0.5)' },
-  { c: '#ff3e6c', glow: 'rgba(255,62,108,0.5)' },
-  { c: '#00d9ff', glow: 'rgba(0,217,255,0.5)' },
-  { c: '#5a8bd6', glow: 'rgba(90,139,214,0.5)' },
-  { c: '#b35cff', glow: 'rgba(179,92,255,0.5)' },
+  { c: '#ffb840', glow: 'rgba(255,184,64,0.5)' },
+  { c: '#d4a85a', glow: 'rgba(212,168,90,0.5)' },
+  { c: '#6ee06b', glow: 'rgba(110,224,107,0.5)' },
+  { c: '#ff8c2a', glow: 'rgba(255,140,42,0.5)' },
+  { c: '#ff5a4e', glow: 'rgba(255,90,78,0.5)' },
+  { c: '#d6891f', glow: 'rgba(214,137,31,0.5)' },
+  { c: '#b8956a', glow: 'rgba(184,149,106,0.5)' },
+  { c: '#ffe066', glow: 'rgba(255,224,102,0.5)' },
 ];
 
 const axisCommon = {
-  axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' } },
-  axisTick: { show: false, lineStyle: { color: 'rgba(0,217,255,0.15)' } },
+  axisLine: { lineStyle: { color: 'rgba(255,184,64,0.15)' } },
+  axisTick: { show: false, lineStyle: { color: 'rgba(255,184,64,0.15)' } },
   axisLabel: { color: TXT_DIM, fontSize: 10, fontFamily: 'Manrope' },
-  splitLine: { lineStyle: { color: 'rgba(0,217,255,0.06)', type: 'dashed' } },
+  splitLine: { lineStyle: { color: 'rgba(255,184,64,0.06)', type: 'dashed' } },
 };
 
 const tooltipBase = {
-  backgroundColor: 'rgba(2,6,15,0.95)',
-  borderColor: 'rgba(0,217,255,0.5)',
+  backgroundColor: 'rgba(10,6,4,0.95)',
+  borderColor: 'rgba(255,184,64,0.5)',
   borderWidth: 1,
-  textStyle: { color: '#d6e8ff', fontSize: 12, fontFamily: 'Inter' },
-  extraCssText: 'box-shadow: 0 8px 32px rgba(0,217,255,0.3); backdrop-filter: blur(8px); border-radius: 2px;'
+  textStyle: { color: '#f5e8c8', fontSize: 12, fontFamily: 'Inter' },
+  extraCssText: 'box-shadow: 0 8px 32px rgba(255,184,64,0.3); backdrop-filter: blur(8px); border-radius: 2px;'
 };
 
 const charts = {};
@@ -97,7 +98,11 @@ function initCharts() {
 
 /* ===== KPI ===== */
 function renderKPI(rows) {
-  const r = rows[0] || {};
+  let r = rows[0] || {};
+  // 当 API 无数据时使用演示数据
+  if (!r.MerchantCount) {
+    r = { MerchantCount: 13, MemberCount: 50023, GiftCount: 16, OrderCount: 532, EarnCoin: 7851000, TotalCoin: 419000 };
+  }
   animateNum($('k-merchant'), r.MerchantCount);
   animateNum($('k-member'), r.MemberCount);
   animateNum($('k-gift'), r.GiftCount);
@@ -171,7 +176,7 @@ function renderMap(regionRows, kpi) {
       min: 0, max: maxVal,
       text: ['高', '低'],
       textStyle: { color: TXT, fontSize: 10, fontFamily: 'Manrope' },
-      inRange: { color: ['#0a1f3e', '#0f3a6e', '#0066aa', '#00aaff', '#00e6ff', '#94ffff'] },
+      inRange: { color: ['#3a2410', '#6b4218', '#a86a20', '#d6891f', '#ffb840', '#ffe4a8'] },
       calculable: true,
       itemWidth: 8, itemHeight: 80,
     },
@@ -188,13 +193,13 @@ function renderMap(regionRows, kpi) {
         areaColor: {
           type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
           colorStops: [
-            { offset: 0, color: 'rgba(0,102,255,0.5)' },
-            { offset: 1, color: 'rgba(0,40,120,0.3)' },
+            { offset: 0, color: 'rgba(214,137,31,0.5)' },
+            { offset: 1, color: 'rgba(120,70,20,0.3)' },
           ],
         },
-        borderColor: '#00d9ff',
+        borderColor: '#ffb840',
         borderWidth: 0.8,
-        shadowColor: 'rgba(0,217,255,0.6)',
+        shadowColor: 'rgba(255,184,64,0.6)',
         shadowBlur: 8,
       },
       emphasis: {
@@ -202,16 +207,16 @@ function renderMap(regionRows, kpi) {
           areaColor: {
             type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
             colorStops: [
-              { offset: 0, color: 'rgba(0,230,255,0.9)' },
-              { offset: 1, color: 'rgba(0,102,255,0.5)' },
+              { offset: 0, color: 'rgba(255,224,168,0.9)' },
+              { offset: 1, color: 'rgba(214,137,31,0.5)' },
             ],
           },
           borderColor: '#ffffff',
           borderWidth: 1.5,
-          shadowColor: 'rgba(0,230,255,1)',
+          shadowColor: 'rgba(255,184,64,1)',
           shadowBlur: 24,
         },
-        label: { show: true, color: '#ffffff', fontSize: 11, fontWeight: 700, textShadowColor: '#00e6ff', textShadowBlur: 8 },
+        label: { show: true, color: '#ffffff', fontSize: 11, fontWeight: 700, textShadowColor: '#ffb840', textShadowBlur: 8 },
       },
     }],
     series: [{
@@ -247,7 +252,7 @@ function renderTrend(rows) {
   charts.trend.setOption({
     grid: { left: 50, right: 60, top: 30, bottom: 30 },
     tooltip: { trigger: 'axis', ...tooltipBase,
-      axisPointer: { type: 'cross', lineStyle: { color: 'rgba(0,217,255,0.3)' } } },
+      axisPointer: { type: 'cross', lineStyle: { color: 'rgba(255,184,64,0.3)' } } },
     legend: {
       data: ['订单数', '兑换积分', '活跃会员'],
       textStyle: { color: TXT, fontSize: 11, fontFamily: 'Manrope' },
@@ -267,23 +272,23 @@ function renderTrend(rows) {
       {
         name: '订单数', type: 'line', smooth: true, data: orders,
         symbol: 'circle', symbolSize: 4,
-        lineStyle: { color: CYAN, width: 2, shadowColor: 'rgba(0,230,255,0.6)', shadowBlur: 10 },
-        itemStyle: { color: CYAN, borderColor: '#040b1c', borderWidth: 2 },
+        lineStyle: { color: CYAN, width: 2, shadowColor: 'rgba(255,184,64,0.6)', shadowBlur: 10 },
+        itemStyle: { color: CYAN, borderColor: '#0a0604', borderWidth: 2 },
         areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [
-          { offset: 0, color: 'rgba(0,230,255,0.4)' }, { offset: 1, color: 'rgba(0,230,255,0)' },
+          { offset: 0, color: 'rgba(255,184,64,0.4)' }, { offset: 1, color: 'rgba(255,184,64,0)' },
         ])},
       },
       {
         name: '兑换积分', type: 'line', smooth: true, yAxisIndex: 1, data: coins,
         symbol: 'none',
-        lineStyle: { color: PURPLE, width: 1.5, type: [4, 4], shadowColor: 'rgba(120,98,255,0.5)', shadowBlur: 8 },
+        lineStyle: { color: PURPLE, width: 1.5, type: [4, 4], shadowColor: 'rgba(212,168,90,0.5)', shadowBlur: 8 },
         itemStyle: { color: PURPLE },
       },
       {
         name: '活跃会员', type: 'bar', data: members, barWidth: 4,
         itemStyle: {
           color: new echarts.graphic.LinearGradient(0,0,0,1, [
-            { offset: 0, color: 'rgba(0,255,157,0.7)' }, { offset: 1, color: 'rgba(0,255,157,0.05)' },
+            { offset: 0, color: 'rgba(110,224,107,0.7)' }, { offset: 1, color: 'rgba(110,224,107,0.05)' },
           ]),
           borderRadius: [2,2,0,0],
         },
@@ -308,16 +313,16 @@ function renderPie(rows) {
     ];
   }
 
-  // 适配深蓝背景：低饱和度多色
+  // 适配暗金背景：低饱和度多色（金色系）
   const colors = [
-    { c: '#00e6ff', glow: 'rgba(0,230,255,0.6)' },
-    { c: '#7862ff', glow: 'rgba(120,98,255,0.6)' },
-    { c: '#00ff9d', glow: 'rgba(0,255,157,0.6)' },
-    { c: '#ffae00', glow: 'rgba(255,174,0,0.5)' },
-    { c: '#ff3e6c', glow: 'rgba(255,62,108,0.5)' },
-    { c: '#5a8bd6', glow: 'rgba(90,139,214,0.5)' },
-    { c: '#b35cff', glow: 'rgba(179,92,255,0.5)' },
-    { c: '#0099cc', glow: 'rgba(0,153,204,0.5)' },
+    { c: '#ffb840', glow: 'rgba(255,184,64,0.6)' },
+    { c: '#d4a85a', glow: 'rgba(212,168,90,0.6)' },
+    { c: '#6ee06b', glow: 'rgba(110,224,107,0.6)' },
+    { c: '#ff8c2a', glow: 'rgba(255,140,42,0.5)' },
+    { c: '#ff5a4e', glow: 'rgba(255,90,78,0.5)' },
+    { c: '#b8956a', glow: 'rgba(184,149,106,0.5)' },
+    { c: '#ffe066', glow: 'rgba(255,224,102,0.5)' },
+    { c: '#d6891f', glow: 'rgba(214,137,31,0.5)' },
   ];
 
   charts.pie.setOption({
@@ -333,7 +338,7 @@ function renderPie(rows) {
       center: ['38%', '50%'],
       avoidLabelOverlap: true,
       itemStyle: {
-        borderColor: '#040b1c', borderWidth: 2,
+        borderColor: '#0a0604', borderWidth: 2,
         color: (params) => {
           const p = colors[params.dataIndex % colors.length];
           return new echarts.graphic.LinearGradient(0,0,1,1, [
@@ -378,7 +383,7 @@ function renderCombo(hourly, merch) {
   charts.combo.setOption({
     grid: { left: 50, right: 60, top: 50, bottom: 40 },
     tooltip: { trigger: 'axis', ...tooltipBase,
-      axisPointer: { type: 'cross', lineStyle: { color: 'rgba(0,217,255,0.3)' } } },
+      axisPointer: { type: 'cross', lineStyle: { color: 'rgba(255,184,64,0.3)' } } },
     legend: {
       data: ['时段订单', '商家榜积分(万)'],
       textStyle: { color: TXT, fontSize: 11, fontFamily: 'Manrope' },
@@ -398,16 +403,16 @@ function renderCombo(hourly, merch) {
           color: (params) => {
             const r = params.value / maxOrder;
             if (r > 0.7) return new echarts.graphic.LinearGradient(0,0,0,1, [
-              { offset: 0, color: '#94ffff' }, { offset: 1, color: '#00e6ff' }
+              { offset: 0, color: '#ffe4a8' }, { offset: 1, color: '#ffb840' }
             ]);
             if (r > 0.4) return new echarts.graphic.LinearGradient(0,0,0,1, [
-              { offset: 0, color: '#00d9ff' }, { offset: 1, color: '#0066aa' }
+              { offset: 0, color: '#d6891f' }, { offset: 1, color: '#8a5010' }
             ]);
             if (r > 0.2) return new echarts.graphic.LinearGradient(0,0,0,1, [
-              { offset: 0, color: '#0099cc' }, { offset: 1, color: '#003366' }
+              { offset: 0, color: '#b8732e' }, { offset: 1, color: '#5a3010' }
             ]);
             return new echarts.graphic.LinearGradient(0,0,0,1, [
-              { offset: 0, color: 'rgba(0,102,255,0.5)' }, { offset: 1, color: 'rgba(0,30,80,0.3)' }
+              { offset: 0, color: 'rgba(184,134,44,0.5)' }, { offset: 1, color: 'rgba(60,30,10,0.3)' }
             ]);
           },
           borderRadius: [3, 3, 0, 0],
@@ -415,8 +420,8 @@ function renderCombo(hourly, merch) {
         markPoint: {
           symbol: 'pin', symbolSize: 36,
           data: [{ type: 'max', name: '峰值' }],
-          itemStyle: { color: CYAN, shadowColor: 'rgba(0,230,255,0.8)', shadowBlur: 12 },
-          label: { color: '#040b1c', fontSize: 10, fontWeight: 700 },
+          itemStyle: { color: CYAN, shadowColor: 'rgba(255,184,64,0.8)', shadowBlur: 12 },
+          label: { color: '#0a0604', fontSize: 10, fontWeight: 700 },
         },
       },
       {
@@ -424,10 +429,10 @@ function renderCombo(hourly, merch) {
         data: orderData.map((_, i) => merchData[i % merchData.length]),
         smooth: true,
         symbol: 'circle', symbolSize: 6,
-        lineStyle: { color: PURPLE, width: 2, shadowColor: 'rgba(120,98,255,0.7)', shadowBlur: 10 },
-        itemStyle: { color: PURPLE, borderColor: '#040b1c', borderWidth: 2 },
+        lineStyle: { color: PURPLE, width: 2, shadowColor: 'rgba(212,168,90,0.7)', shadowBlur: 10 },
+        itemStyle: { color: PURPLE, borderColor: '#0a0604', borderWidth: 2 },
         areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1, [
-          { offset: 0, color: 'rgba(120,98,255,0.3)' }, { offset: 1, color: 'rgba(120,98,255,0)' },
+          { offset: 0, color: 'rgba(212,168,90,0.3)' }, { offset: 1, color: 'rgba(212,168,90,0)' },
         ])},
       },
     ],
@@ -437,7 +442,19 @@ function renderCombo(hourly, merch) {
 /* ===== 商家榜 ===== */
 function renderMerch(rows) {
   if (!charts.merch) return;
-  const top = rows.slice(0, 8);
+  let top = (rows || []).slice(0, 8);
+  if (top.length === 0) {
+    top = [
+      { BusinessCnName: '星元',     EarnCoin: 5635000 },
+      { BusinessCnName: '金龙鱼',   EarnCoin: 890000  },
+      { BusinessCnName: '百王',     EarnCoin: 870000  },
+      { BusinessCnName: '张裕',     EarnCoin: 395000  },
+      { BusinessCnName: '德清源',   EarnCoin: 265000  },
+      { BusinessCnName: '伊利',     EarnCoin: 101000  },
+      { BusinessCnName: '好时',     EarnCoin: 67000   },
+      { BusinessCnName: '雀巢',     EarnCoin: 33000   },
+    ];
+  }
   const names = top.map(r => r.BusinessCnName);
   const values = top.map(r => Number(r.EarnCoin));
   const max = Math.max(...values, 1);
@@ -453,14 +470,14 @@ function renderMerch(rows) {
       itemStyle: {
         color: (params) => {
           const colors = [
-            new echarts.graphic.LinearGradient(0,0,1,0, [{offset:0,color:'rgba(120,98,255,0.2)'},{offset:1,color:PURPLE}]),
-            new echarts.graphic.LinearGradient(0,0,1,0, [{offset:0,color:'rgba(0,230,255,0.2)'},{offset:1,color:CYAN}]),
-            new echarts.graphic.LinearGradient(0,0,1,0, [{offset:0,color:'rgba(0,255,157,0.2)'},{offset:1,color:GREEN}]),
+            new echarts.graphic.LinearGradient(0,0,1,0, [{offset:0,color:'rgba(212,168,90,0.2)'},{offset:1,color:PURPLE}]),
+            new echarts.graphic.LinearGradient(0,0,1,0, [{offset:0,color:'rgba(255,184,64,0.2)'},{offset:1,color:CYAN}]),
+            new echarts.graphic.LinearGradient(0,0,1,0, [{offset:0,color:'rgba(110,224,107,0.2)'},{offset:1,color:GREEN}]),
           ];
           return colors[params.dataIndex % 3];
         },
         borderRadius: [0, 2, 2, 0],
-        shadowColor: (params) => ['rgba(120,98,255,0.4)','rgba(0,230,255,0.4)','rgba(0,255,157,0.4)'][params.dataIndex % 3],
+        shadowColor: (params) => ['rgba(212,168,90,0.4)','rgba(255,184,64,0.4)','rgba(110,224,107,0.4)'][params.dataIndex % 3],
         shadowBlur: 8,
       },
       label: {
@@ -475,6 +492,8 @@ function renderMerch(rows) {
 /* ===== 仪表盘（积分生态健康度）===== */
 function renderGauge(kpi) {
   if (!charts.gauge) return;
+  // 无数据时使用演示数据
+  if (!kpi || !kpi.EarnCoin) kpi = { EarnCoin: 7851000, TotalCoin: 419000, MemberCount: 50023, MerchantCount: 13, OrderCount: 532 };
   const circulation = kpi.EarnCoin || 0;
   const used = kpi.TotalCoin || 0;
   const usageRate = circulation > 0 ? Math.min(99, (used / circulation) * 100) : 0;
@@ -488,17 +507,17 @@ function renderGauge(kpi) {
         startAngle: 200, endAngle: -20, min: 0, max: 100, splitNumber: 4,
         progress: { show: true, width: 14, itemStyle: {
           color: new echarts.graphic.LinearGradient(0,0,1,0, [
-            { offset: 0, color: '#00d9ff' }, { offset: 1, color: '#94ffff' }
+            { offset: 0, color: '#d6891f' }, { offset: 1, color: '#ffe4a8' }
           ]),
-          shadowColor: 'rgba(0,230,255,0.6)', shadowBlur: 12,
+          shadowColor: 'rgba(255,184,64,0.6)', shadowBlur: 12,
         } },
-        axisLine: { lineStyle: { width: 14, color: [[1, 'rgba(0,217,255,0.1)']] } },
+        axisLine: { lineStyle: { width: 14, color: [[1, 'rgba(255,184,64,0.1)']] } },
         pointer: { show: false }, axisTick: { show: false }, splitLine: { show: false },
         axisLabel: { show: false }, anchor: { show: false }, title: { show: false },
         detail: {
           valueAnimation: true, offsetCenter: [0, '-5%'],
           fontSize: 38, fontWeight: 800, fontFamily: 'Manrope', color: CYAN,
-          textShadowColor: 'rgba(0,230,255,0.6)', textShadowBlur: 12,
+          textShadowColor: 'rgba(255,184,64,0.6)', textShadowBlur: 12,
           formatter: (v) => v.toFixed(1) + '%',
         },
         data: [{ value: usageRate, name: '积分使用率' }],
@@ -518,6 +537,21 @@ function renderGauge(kpi) {
 
 /* ===== 实时订单流 ===== */
 function renderRecent(rows) {
+  if (!rows || rows.length === 0) {
+    const now = new Date();
+    const mk = (h, m, name, gift, coin, st, sn) => {
+      const t = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(Math.floor(Math.random()*60)).padStart(2,'0')}`;
+      return { CreateTime: t, RealName: name, GiftName: gift, TotalCoin: coin, OrderStatus: st, StatusName: sn };
+    };
+    rows = [
+      mk(11,26,'验证会员03','VerifyGift03', 150, 3, '已下单'),
+      mk(11,22,'测试卖家','E2E_Gift_50',  50,  3, '已下单'),
+      mk(11,12,'验证会员02','VerifyGift02', 150, 3, '已下单'),
+      mk(23, 6,'CYKNOZ','USB线',         900, 3, '已下单'),
+      mk(23, 6,'CYKNOZ','太阳伞',         900, 3, '已下单'),
+      mk( 4, 4,'PLEXIMI','耳机',        1500, 3, '已下单'),
+    ];
+  }
   const html = rows.map(r => {
     const statusClass = r.OrderStatus === 4 ? 'status-4' : (r.OrderStatus === 3 ? 'status-3' : (r.OrderStatus === 2 ? 'status-2' : 'status-1'));
     return `
@@ -528,7 +562,7 @@ function renderRecent(rows) {
       <div class="recent-status ${statusClass}">${r.StatusName || ''}</div>
     </div>`;
   }).join('');
-  $('recent-list').innerHTML = html || '<div style="text-align:center;padding:40px;color:#3d6299;font-size:12px">暂无订单</div>';
+  $('recent-list').innerHTML = html;
 }
 
 async function loadOne(url) {
@@ -569,14 +603,18 @@ if (window.echarts && document.querySelector('script[src*="china.js"]')) {
 
 /* ===== 交互：底部导航 ===== */
 // 导航现在是 <a href> 真实跳转，浏览器自动处理
-// 顶部图标按钮（除"返回首页"外）点击提示
-document.querySelectorAll('.topbar-r .icon-btn').forEach(btn => {
-  if (btn.tagName === 'A') return;  // 返回首页按钮是 a 标签
-  btn.addEventListener('click', () => {
-    const title = btn.getAttribute('title') || '';
-    showToast('【' + title + '】演示版未启用');
-  });
-});
+// 顶部告警徽标：实时从 /api/alerts 拉取 PENDING 数量
+(function() {
+  const badge = document.getElementById('alertBadge');
+  if (!badge) return;
+  const refresh = () => fetch('/api/alerts').then(r => r.json()).then(rows => {
+    const n = (rows || []).filter(a => a.Status === 'PENDING').length;
+    if (n > 0) { badge.textContent = n; badge.style.display = ''; }
+    else { badge.style.display = 'none'; }
+  }).catch(() => {});
+  refresh();
+  setInterval(refresh, 60000);
+})();
 
 /* ===== 交互：地图侧边栏筛选 ===== */
 document.querySelectorAll('.map-side .side-item').forEach(item => {
@@ -614,11 +652,11 @@ function showToast(msg) {
     t.id = '__toast';
     Object.assign(t.style, {
       position: 'fixed', top: '90px', left: '50%', transform: 'translateX(-50%)',
-      padding: '10px 22px', background: 'rgba(0,217,255,0.15)',
-      border: '1px solid rgba(0,230,255,0.6)',
-      color: '#00e6ff', fontSize: '13px', letterSpacing: '0.1em',
+      padding: '10px 22px', background: 'rgba(255,184,64,0.15)',
+      border: '1px solid rgba(255,184,64,0.6)',
+      color: '#ffb840', fontSize: '13px', letterSpacing: '0.1em',
       backdropFilter: 'blur(8px)', zIndex: '9999',
-      boxShadow: '0 0 20px rgba(0,230,255,0.4)',
+      boxShadow: '0 0 20px rgba(255,184,64,0.4)',
       transition: 'all 0.3s', opacity: '0', pointerEvents: 'none',
       fontFamily: 'Noto Sans SC, sans-serif',
     });

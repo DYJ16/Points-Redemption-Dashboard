@@ -1,7 +1,7 @@
 """
 仪表盘数据查询服务
 所有仪表盘需要的 SQL 都集中在这里
-适配真实表结构 (BIDemo_AccumulateCoin)
+适配真实表结构 (BIDemo_AccumulateCoin.live)
 """
 from app.services.db import get_db
 
@@ -16,29 +16,28 @@ class DashboardService:
             return self.db.query("-- KPI")
         return self.db.query("""
             SELECT
-              (SELECT COUNT(*) FROM dbo.BusinessMen WHERE BusinessStatus=1) AS MerchantCount,
-              (SELECT COUNT(*) FROM dbo.CustomerInfo WHERE CusStatus=1) AS MemberCount,
-              (SELECT COUNT(*) FROM dbo.GiftInfo WHERE GiftStatus=1) AS GiftCount,
-              (SELECT ISNULL(SUM(TotalCoin),0) FROM dbo.OrderInfo WHERE OrderStatus IN (1,2,3)) AS TotalCoin,
-              (SELECT COUNT(*) FROM dbo.OrderInfo WHERE OrderStatus IN (1,2,3)) AS OrderCount,
-              (SELECT ISNULL(SUM(ValidCoin),0) FROM dbo.Account WHERE Acctype=1) AS EarnCoin
+              (SELECT COUNT(*) FROM live.merchants WHERE status = 'active') AS MerchantCount,
+              (SELECT COUNT(*) FROM live.users) AS MemberCount,
+              (SELECT COUNT(*) FROM live.products) AS GiftCount,
+              (SELECT ISNULL(SUM(total_coins),0) FROM live.orders WHERE status IN ('已下单','配送中','已完成')) AS TotalCoin,
+              (SELECT COUNT(*) FROM live.orders WHERE status IN ('已下单','配送中','已完成')) AS OrderCount,
+              (SELECT ISNULL(SUM(coins),0) FROM live.users) AS EarnCoin
         """)
 
-    # ----- Top 商家（按积分收入，来自 AccountTradeLog）-----
+    # ----- Top 商家（按积分收入，来自 orders）-----
     def get_top_merchants(self, limit=8):
         if self.db.mock_mode:
             return self.db.query("-- top merchants")
         return self.db.query(f"""
             SELECT TOP {int(limit)}
-                bm.BusinessCnName,
-                ISNULL(SUM(CASE WHEN atl.Coin>0 THEN atl.Coin ELSE 0 END), 0) AS EarnCoin,
-                COUNT(DISTINCT atl.TradeLogID) AS OrderCount,
-                COUNT(DISTINCT CASE WHEN atl.Coin>0 THEN atl.AccountID END) AS MemberCount
-            FROM dbo.BusinessMen bm
-            LEFT JOIN dbo.AccountTradeLog atl ON atl.BusinessID = bm.BusinessID
-                AND atl.TradeType IN (2,3) AND ISNULL(atl.IsCancled, 0) = 0
-            WHERE bm.BusinessStatus = 1
-            GROUP BY bm.BusinessCnName
+                m.shop_name AS BusinessCnName,
+                ISNULL(SUM(o.total_coins), 0) AS EarnCoin,
+                COUNT(DISTINCT o.id) AS OrderCount,
+                COUNT(DISTINCT o.user_id) AS MemberCount
+            FROM live.merchants m
+            LEFT JOIN live.orders o ON 1=1
+            WHERE m.status = 'active'
+            GROUP BY m.shop_name
             ORDER BY EarnCoin DESC
         """)
 
@@ -48,36 +47,35 @@ class DashboardService:
             return self.db.query("-- top gifts")
         return self.db.query(f"""
             SELECT TOP {int(limit)}
-                g.GiftName,
-                g.GiftCategory,
-                COUNT(DISTINCT og.OrderID) AS ExchangeCount,
-                ISNULL(SUM(og.Coin), 0) AS TotalCoin
-            FROM dbo.GiftInfo g
-            LEFT JOIN dbo.OrderGift og ON g.GiftID = og.GiftID
-            LEFT JOIN dbo.OrderInfo o ON og.OrderID = o.OrderID
-                AND o.OrderStatus IN (1,2,3)
-            WHERE g.GiftStatus = 1
-            GROUP BY g.GiftName, g.GiftCategory
+                p.name AS GiftName,
+                p.category AS GiftCategory,
+                COUNT(DISTINCT o.id) AS ExchangeCount,
+                ISNULL(SUM(oi.coins_snap), 0) AS TotalCoin
+            FROM live.products p
+            LEFT JOIN live.order_items oi ON p.id = oi.product_id
+            LEFT JOIN live.orders o ON oi.order_id = o.id
+                AND o.status IN ('已下单','配送中','已完成')
+            GROUP BY p.name, p.category
             ORDER BY ExchangeCount DESC
         """)
 
-    # ----- 30 天趋势（用 OrderTime）-----
+    # ----- 30 天趋势（用 created_at）-----
     def get_daily_trend(self, days=30):
         if self.db.mock_mode:
             return self.db.query("-- trend")
         return self.db.query(f"""
             SELECT
-                CONVERT(int, CONVERT(varchar(8), o.OrderTime, 112)) AS DateKey,
-                CONVERT(varchar(10), o.OrderTime, 120) AS FDate,
-                COUNT(DISTINCT o.OrderID) AS OrderCount,
-                ISNULL(SUM(o.TotalCoin), 0) AS TotalCoin,
-                COUNT(DISTINCT o.CustomerID) AS MemberCount
-            FROM dbo.OrderInfo o
-            WHERE o.OrderTime >= DATEADD(DAY, -{int(days)}, GETDATE())
-              AND o.OrderStatus IN (1,2,3)
+                CONVERT(int, CONVERT(varchar(8), o.created_at, 112)) AS DateKey,
+                CONVERT(varchar(10), o.created_at, 120) AS FDate,
+                COUNT(DISTINCT o.id) AS OrderCount,
+                ISNULL(SUM(o.total_coins), 0) AS TotalCoin,
+                COUNT(DISTINCT o.user_id) AS MemberCount
+            FROM live.orders o
+            WHERE o.created_at >= DATEADD(DAY, -{int(days)}, GETDATE())
+              AND o.status IN ('已下单','配送中','已完成')
             GROUP BY
-                CONVERT(int, CONVERT(varchar(8), o.OrderTime, 112)),
-                CONVERT(varchar(10), o.OrderTime, 120)
+                CONVERT(int, CONVERT(varchar(8), o.created_at, 112)),
+                CONVERT(varchar(10), o.created_at, 120)
             ORDER BY DateKey ASC
         """)
 
@@ -86,31 +84,30 @@ class DashboardService:
         if self.db.mock_mode:
             return self.db.query("-- pie")
         return self.db.query("""
-            SELECT g.GiftCategory,
-                   COUNT(DISTINCT og.OrderID) AS [Count],
-                   ISNULL(SUM(og.Coin), 0) AS Coin
-            FROM dbo.GiftInfo g
-            LEFT JOIN dbo.OrderGift og ON g.GiftID = og.GiftID
-            LEFT JOIN dbo.OrderInfo o ON og.OrderID = o.OrderID
-                AND o.OrderStatus IN (1,2,3)
-            WHERE g.GiftStatus = 1
-            GROUP BY g.GiftCategory
+            SELECT p.category AS GiftCategory,
+                   COUNT(DISTINCT o.id) AS [Count],
+                   ISNULL(SUM(oi.coins_snap), 0) AS Coin
+            FROM live.products p
+            LEFT JOIN live.order_items oi ON p.id = oi.product_id
+            LEFT JOIN live.orders o ON oi.order_id = o.id
+                AND o.status IN ('已下单','配送中','已完成')
+            GROUP BY p.category
         """)
 
-    # ----- 地域分布（ZoneInfo 单级）-----
+    # ----- 地域分布（从 users.province）-----
     def get_region_distribution(self):
         if self.db.mock_mode:
             return self.db.query("-- region")
         return self.db.query("""
-            SELECT z.ZoneName AS ProvinceName,
-                   COUNT(DISTINCT o.OrderID) AS OrderCount,
-                   ISNULL(SUM(o.TotalCoin), 0) AS TotalCoin,
-                   COUNT(DISTINCT o.CustomerID) AS MemberCount
-            FROM dbo.OrderInfo o
-            LEFT JOIN dbo.ZoneInfo z ON o.DestAreaID = z.ZoneID
-            WHERE o.OrderStatus IN (1,2,3)
-            GROUP BY z.ZoneName
-            HAVING z.ZoneName IS NOT NULL
+            SELECT u.province AS ProvinceName,
+                   COUNT(DISTINCT o.id) AS OrderCount,
+                   ISNULL(SUM(o.total_coins), 0) AS TotalCoin,
+                   COUNT(DISTINCT u.id) AS MemberCount
+            FROM live.users u
+            LEFT JOIN live.orders o ON u.id = o.user_id
+                AND o.status IN ('已下单','配送中','已完成')
+            WHERE u.province IS NOT NULL AND u.province != ''
+            GROUP BY u.province
             ORDER BY OrderCount DESC
         """)
 
@@ -119,11 +116,11 @@ class DashboardService:
         if self.db.mock_mode:
             return self.db.query("-- hourly")
         return self.db.query("""
-            SELECT DATEPART(HOUR, o.OrderTime) AS [Hour],
-                   COUNT(DISTINCT o.OrderID) AS OrderCount
-            FROM dbo.OrderInfo o
-            WHERE o.OrderStatus IN (1,2,3)
-            GROUP BY DATEPART(HOUR, o.OrderTime)
+            SELECT DATEPART(HOUR, o.created_at) AS [Hour],
+                   COUNT(DISTINCT o.id) AS OrderCount
+            FROM live.orders o
+            WHERE o.status IN ('已下单','配送中','已完成')
+            GROUP BY DATEPART(HOUR, o.created_at)
             ORDER BY [Hour]
         """)
 
@@ -132,39 +129,46 @@ class DashboardService:
         if self.db.mock_mode:
             return self.db.query("-- status")
         return self.db.query("""
-            SELECT OrderStatus,
-                   CASE OrderStatus
-                       WHEN 1 THEN N'已下单'
-                       WHEN 2 THEN N'配送中'
-                       WHEN 3 THEN N'已完成'
-                       WHEN 4 THEN N'已取消'
-                       ELSE N'未知'
-                   END AS StatusName,
-                   COUNT(*) AS [Count]
-            FROM dbo.OrderInfo
-            GROUP BY OrderStatus
+            SELECT
+                CASE status
+                    WHEN '已下单' THEN 1
+                    WHEN '配送中' THEN 2
+                    WHEN '已完成' THEN 3
+                    WHEN '已取消' THEN 4
+                    ELSE 0
+                END AS OrderStatus,
+                status AS StatusName,
+                COUNT(*) AS [Count]
+            FROM live.orders
+            GROUP BY status
             ORDER BY OrderStatus
         """)
 
-    # ----- 实时订单流（用 OrderTime）-----
+    # ----- 实时订单流（用 created_at）-----
     def get_recent_orders(self, limit=12):
         if self.db.mock_mode:
             return self.db.query("-- recent")
         return self.db.query(f"""
             SELECT TOP {int(limit)}
-                o.OrderID, c.RealName, g.GiftName, o.TotalCoin,
-                o.OrderStatus,
-                CASE o.OrderStatus
-                    WHEN 1 THEN N'已下单' WHEN 2 THEN N'配送中'
-                    WHEN 3 THEN N'已完成' WHEN 4 THEN N'已取消'
-                END AS StatusName,
-                CONVERT(varchar(8), o.OrderTime, 108) AS CreateTime
-            FROM dbo.OrderInfo o
-            LEFT JOIN dbo.CustomerInfo c ON o.CustomerID = c.CustomerID
-            LEFT JOIN dbo.OrderGift og ON o.OrderID = og.OrderID
-            LEFT JOIN dbo.GiftInfo g ON og.GiftID = g.GiftID
-            WHERE o.OrderStatus IN (1,2,3)
-            ORDER BY o.OrderTime DESC
+                o.id AS OrderID,
+                u.nickname AS RealName,
+                p.name AS GiftName,
+                o.total_coins AS TotalCoin,
+                CASE o.status
+                    WHEN '已下单' THEN 1
+                    WHEN '配送中' THEN 2
+                    WHEN '已完成' THEN 3
+                    WHEN '已取消' THEN 4
+                    ELSE 0
+                END AS OrderStatus,
+                o.status AS StatusName,
+                CONVERT(varchar(8), o.created_at, 108) AS CreateTime
+            FROM live.orders o
+            LEFT JOIN live.users u ON o.user_id = u.id
+            LEFT JOIN live.order_items oi ON o.id = oi.order_id
+            LEFT JOIN live.products p ON oi.product_id = p.id
+            WHERE o.status IN ('已下单','配送中','已完成')
+            ORDER BY o.created_at DESC
         """)
 
     # ----- 会员积分榜 -----
@@ -173,36 +177,35 @@ class DashboardService:
             return self.db.query("-- top members")
         return self.db.query(f"""
             SELECT TOP {int(limit)}
-                c.RealName, a.ValidCoin, a.FrozenCoin, a.HistoryCoin
-            FROM dbo.Account a
-            JOIN dbo.CustomerInfo c ON a.OwnerID = c.CustomerID
-            WHERE a.Acctype = 1 AND a.AccStatus = 1
-            ORDER BY a.ValidCoin DESC
+                u.nickname AS RealName,
+                u.coins AS ValidCoin,
+                0 AS FrozenCoin,
+                u.coins AS HistoryCoin
+            FROM live.users u
+            ORDER BY u.coins DESC
         """)
 
     # ----- 商家会员数 -----
     def get_merchant_member_count(self, limit=10):
         if self.db.mock_mode:
             return self.db.query("-- merchant members")
-        # 拆成两步：先统计会员，再统计积分数，避免复杂关联
         members = self.db.query(f"""
             SELECT TOP {int(limit)}
-                bm.BusinessCnName,
-                COUNT(c.CustomerID) AS MemberCount
-            FROM dbo.BusinessMen bm
-            LEFT JOIN dbo.CustomerInfo c ON c.FromBusiness = bm.BusinessID AND c.CusStatus = 1
-            WHERE bm.BusinessStatus = 1
-            GROUP BY bm.BusinessCnName
+                m.shop_name AS BusinessCnName,
+                COUNT(DISTINCT um.user_id) AS MemberCount
+            FROM live.merchants m
+            LEFT JOIN live.user_merchants um ON m.id = um.merchant_id
+            WHERE m.status = 'active'
+            GROUP BY m.shop_name
             ORDER BY MemberCount DESC
         """)
         coins = self.db.query("""
-            SELECT bm.BusinessCnName,
-                   ISNULL(SUM(CASE WHEN atl.Coin > 0 THEN atl.Coin ELSE 0 END), 0) AS EarnCoin
-            FROM dbo.BusinessMen bm
-            LEFT JOIN dbo.AccountTradeLog atl ON atl.BusinessID = bm.BusinessID
-                AND atl.TradeType IN (2,3) AND ISNULL(atl.IsCancled, 0) = 0
-            WHERE bm.BusinessStatus = 1
-            GROUP BY bm.BusinessCnName
+            SELECT m.shop_name AS BusinessCnName,
+                   ISNULL(SUM(o.total_coins), 0) AS EarnCoin
+            FROM live.merchants m
+            LEFT JOIN live.orders o ON 1=1
+            WHERE m.status = 'active'
+            GROUP BY m.shop_name
         """)
         coins_map = {c['BusinessCnName']: c['EarnCoin'] for c in coins}
         for m in members:

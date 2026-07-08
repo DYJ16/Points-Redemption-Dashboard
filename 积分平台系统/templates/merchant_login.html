@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}商家登录 · 金币联盟{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-eyebrow">MERCHANT LOGIN</div>
+  <h1 class="auth-title">商家登录</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+        <div class="flash flash-{{ 'error' if cat == 'error' else 'ok' }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="post" novalidate>
+    <div class="field">
+      <label for="phone">手机号</label>
+      <input id="phone" name="phone" type="tel" maxlength="11" placeholder="请输入注册时的手机号" required>
+    </div>
+    <div class="field">
+      <label for="password">密码</label>
+      <input id="password" name="password" type="password" placeholder="登录密码" required>
+    </div>
+    <div class="auth-actions">
+      <button type="submit" class="btn btn-primary">登录</button>
+    </div>
+    <div class="auth-foot">
+      还没入驻？<a href="{{ url_for('merchant_register') }}">立即申请</a> ·
+      会员请<a href="{{ url_for('login') }}">前往会员入口</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

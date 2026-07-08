@@ -1,4 +1,4 @@
-{% extends "_base.html" %}
+﻿{% extends "_base.html" %}
 {% block title %}会员管理{% endblock %}
 {% block page_title %}会员管理{% endblock %}
 {% block page_subtitle %}MEMBER MANAGEMENT{% endblock %}
@@ -31,8 +31,8 @@
       <div><div class="hd-title">会员列表</div><div class="hd-sub">点击行 → 钻取该会员</div></div>
     </div>
     <div class="hd-r">
-      <input type="text" id="searchInput" placeholder="搜索姓名/登录名" style="padding:4px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;outline:none;">
-      <select id="pageSize" style="padding:4px 8px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;">
+      <input type="text" id="searchInput" placeholder="搜索姓名/登录名" style="padding:4px 10px;background:rgba(255,184,64,0.06);border:1px solid var(--cyan-soft);color:#f5e8c8;font-size:12px;border-radius:2px;outline:none;">
+      <select id="pageSize" style="padding:4px 8px;background:rgba(255,184,64,0.06);border:1px solid var(--cyan-soft);color:#f5e8c8;font-size:12px;border-radius:2px;">
         <option value="20">20/页</option>
         <option value="50" selected>50/页</option>
         <option value="100">100/页</option>
@@ -44,7 +44,7 @@
       <thead><tr>
         <th>ID</th><th>姓名</th><th>登录名</th><th>性别</th><th>电话</th><th>邮箱</th><th>来源商家</th><th>可用积分</th><th>冻结</th><th>累计</th><th>注册时间</th><th>操作</th>
       </tr></thead>
-      <tbody><tr><td colspan="12" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+      <tbody><tr><td colspan="12" style="text-align:center;color:#7a6240;padding:30px">加载中...</td></tr></tbody>
     </table>
   </div>
   <div style="display:flex;justify-content:center;align-items:center;padding:12px;gap:8px;border-top:1px solid var(--line-soft)">
@@ -87,7 +87,7 @@ async function load() {
     document.getElementById('kpi-avg').textContent = avg.toLocaleString();
     document.getElementById('kpi-top').textContent = top.toLocaleString();
   } else {
-    tb.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#3d6299;padding:30px">暂无数据</td></tr>';
+    tb.innerHTML = '<tr><td colspan="12" style="text-align:center;color:#7a6240;padding:30px">暂无数据</td></tr>';
   }
   document.getElementById('total').textContent = data.total.toLocaleString();
   document.getElementById('curPage').textContent = data.page;

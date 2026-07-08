@@ -1,4 +1,4 @@
-{% extends "_base.html" %}
+﻿{% extends "_base.html" %}
 {% block title %}商家详情 #{{ biz_id }}{% endblock %}
 {% block page_title %}商家详情 - #{{ biz_id }}{% endblock %}
 {% block page_subtitle %}MERCHANT DETAIL{% endblock %}
@@ -45,7 +45,7 @@
     <div class="panel-bd" style="flex:1; overflow:auto; max-height: 280px;">
       <table class="tbl" id="productTable">
         <thead><tr><th>ID</th><th>商品名</th><th>品牌</th><th>类型</th><th>积分</th><th>状态</th></tr></thead>
-        <tbody><tr><td colspan="6" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
+        <tbody><tr><td colspan="6" style="text-align:center;color:#7a6240">加载中...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -62,7 +62,7 @@
   <div class="panel-bd" style="flex:1; overflow:auto; max-height: 360px;">
     <table class="tbl" id="memberTable">
       <thead><tr><th>ID</th><th>姓名</th><th>登录名</th><th>注册时间</th><th>可用积分</th><th>累计积分</th></tr></thead>
-      <tbody><tr><td colspan="6" style="text-align:center;color:#3d6299">加载中...</td></tr></tbody>
+      <tbody><tr><td colspan="6" style="text-align:center;color:#7a6240">加载中...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -73,7 +73,7 @@
 const bizId = {{ biz_id|int if biz_id else 0 }};
 (async function() {
   if (!bizId) {
-    document.querySelector('.submain').innerHTML = '<div class="panel panel-bd" style="text-align:center;color:#5a8bd6;padding:40px">未指定商家 ID</div>';
+    document.querySelector('.submain').innerHTML = '<div class="panel panel-bd" style="text-align:center;color:#b8956a;padding:40px">未指定商家 ID</div>';
     return;
   }
   const r = await fetch('/api/merchant_detail?id=' + bizId);
@@ -94,7 +94,7 @@ const bizId = {{ biz_id|int if biz_id else 0 }};
       <td><span class="pill ${p.ProductStatus===1?'pill-OK':'pill-DISABLED'}">${p.ProductStatus===1?'在售':'下架'}</span></td></tr>
     `).join('');
   } else {
-    ptb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#3d6299">暂无商品</td></tr>';
+    ptb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7a6240">暂无商品</td></tr>';
   }
   // 会员
   const mtb = document.querySelector('#memberTable tbody');
@@ -105,7 +105,7 @@ const bizId = {{ biz_id|int if biz_id else 0 }};
       <td class="num">${(m.HistoryCoin||0).toLocaleString()}</td></tr>
     `).join('');
   } else {
-    mtb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#3d6299">暂无会员</td></tr>';
+    mtb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7a6240">暂无会员</td></tr>';
   }
   // 图表
   const chart = echarts.init(document.getElementById('chart-merchant-trend'));
@@ -113,14 +113,14 @@ const bizId = {{ biz_id|int if biz_id else 0 }};
   chart.setOption({
     grid: { left: 50, right: 30, top: 20, bottom: 30 },
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: daily.map(d => (d.FDate||'').slice(5)), axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }}, axisLabel: { color: '#5a8bd6', fontSize: 10 } },
+    xAxis: { type: 'category', data: daily.map(d => (d.FDate||'').slice(5)), axisLine: { lineStyle: { color: 'rgba(255,184,64,0.15)' }}, axisLabel: { color: '#b8956a', fontSize: 10 } },
     yAxis: [
-      { type: 'value', name: '笔数', axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }}, axisLabel: { color: '#5a8bd6', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(0,217,255,0.06)', type: 'dashed' }} },
-      { type: 'value', name: '积分', axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }}, axisLabel: { color: '#5a8bd6', fontSize: 10 }, splitLine: { show: false } },
+      { type: 'value', name: '笔数', axisLine: { lineStyle: { color: 'rgba(255,184,64,0.15)' }}, axisLabel: { color: '#b8956a', fontSize: 10 }, splitLine: { lineStyle: { color: 'rgba(255,184,64,0.06)', type: 'dashed' }} },
+      { type: 'value', name: '积分', axisLine: { lineStyle: { color: 'rgba(255,184,64,0.15)' }}, axisLabel: { color: '#b8956a', fontSize: 10 }, splitLine: { show: false } },
     ],
     series: [
-      { name: '交易笔数', type: 'bar', data: daily.map(d => d.TradeCount), itemStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#00d9ff'},{offset:1,color:'#0066aa'}] }, borderRadius: [2,2,0,0] } },
-      { name: '积分发放', type: 'line', yAxisIndex: 1, smooth: true, data: daily.map(d => d.EarnCoin), lineStyle: { color: '#7862ff', width: 2, shadowColor: 'rgba(120,98,255,0.5)', shadowBlur: 8 }, itemStyle: { color: '#7862ff' }, areaStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(120,98,255,0.3)'},{offset:1,color:'rgba(120,98,255,0)'}] } } },
+      { name: '交易笔数', type: 'bar', data: daily.map(d => d.TradeCount), itemStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'#d6891f'},{offset:1,color:'#a86a20'}] }, borderRadius: [2,2,0,0] } },
+      { name: '积分发放', type: 'line', yAxisIndex: 1, smooth: true, data: daily.map(d => d.EarnCoin), lineStyle: { color: '#d4a85a', width: 2, shadowColor: 'rgba(212,168,90,0.5)', shadowBlur: 8 }, itemStyle: { color: '#d4a85a' }, areaStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(212,168,90,0.3)'},{offset:1,color:'rgba(212,168,90,0)'}] } } },
     ],
   });
   window.addEventListener('resize', () => chart.resize());

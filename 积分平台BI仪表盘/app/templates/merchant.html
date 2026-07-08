@@ -1,4 +1,4 @@
-{% extends "_base.html" %}
+﻿{% extends "_base.html" %}
 {% block title %}商家监控{% endblock %}
 {% block page_title %}商家监控{% endblock %}
 {% block page_subtitle %}MERCHANT MONITORING{% endblock %}
@@ -31,7 +31,7 @@
       <div><div class="hd-title">商家列表</div><div class="hd-sub">点击行 → 钻取详情</div></div>
     </div>
     <div class="hd-r">
-      <input type="text" id="searchInput" placeholder="搜索商家名..." style="padding:4px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;outline:none;">
+      <input type="text" id="searchInput" placeholder="搜索商家名..." style="padding:4px 10px;background:rgba(255,184,64,0.06);border:1px solid var(--cyan-soft);color:#f5e8c8;font-size:12px;border-radius:2px;outline:none;">
     </div>
   </div>
   <div class="panel-bd" style="flex:1; overflow:auto;">
@@ -39,7 +39,7 @@
       <thead><tr>
         <th>ID</th><th>中文名</th><th>英文名</th><th>状态</th><th>注册时间</th><th>操作</th>
       </tr></thead>
-      <tbody><tr><td colspan="6" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+      <tbody><tr><td colspan="6" style="text-align:center;color:#7a6240;padding:30px">加载中...</td></tr></tbody>
     </table>
   </div>
 </div>
@@ -53,7 +53,7 @@
     const data = await r.json();
     const tb = document.querySelector('#merchantTable tbody');
     if (!data || data.length === 0) {
-      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#3d6299;padding:30px">暂无数据</td></tr>';
+      tb.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#7a6240;padding:30px">暂无数据</td></tr>';
       return;
     }
     const search = document.getElementById('searchInput').value.trim().toLowerCase();

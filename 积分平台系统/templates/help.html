@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}帮助中心 · 金币联盟{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:50px">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">
+        <span class="num">07</span>
+        帮助中心
+      </h2>
+      <span class="section-meta">新手引导 · 常见问题 · 联系我们</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:24px">
+      {% for group, items in groups.items() %}
+      <div class="info-card">
+        <h3 class="info-card-title">{{ group }}</h3>
+        <ul class="info-list">
+          {% for h in items %}
+          <li>
+            <span class="dot">◆</span>
+            <span style="font-size:14px;font-weight:500;color:var(--ink)">{{ h.title }}</span>
+          </li>
+          <li style="padding:6px 0 12px 22px;font-size:13px;color:var(--ink-muted);line-height:1.7">
+            {{ h.body }}
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if current_user %}
+    <div class="panel" style="margin-top:40px;text-align:center;border:1px dashed var(--gold)">
+      <h3 class="panel-title" style="color:var(--gold-deep)">演示专用 · Demo Tools</h3>
+      <p style="color:var(--ink-muted);font-size:13px;margin-bottom:18px">一键获取测试用金币（仅供本地演示，请勿用于生产环境）</p>
+      <form method="post" action="{{ url_for('demo_get_coins') }}">
+        <button type="submit" class="btn btn-gold" style="min-width:240px">一键领取 999999999 金币</button>
+      </form>
+      <div style="font-size:11px;color:var(--ink-muted);margin-top:12px">当前余额：<span style="color:var(--gold-deep);font-weight:600">{{ current_user.coins }}</span></div>
+    </div>
+    {% else %}
+    <div class="panel" style="margin-top:40px;text-align:center;border:1px dashed var(--ink-muted)">
+      <p style="color:var(--ink-muted);font-size:13px">登录后即可使用演示工具</p>
+      <a href="{{ url_for('login') }}" class="btn btn-primary" style="margin-top:10px">前往登录</a>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

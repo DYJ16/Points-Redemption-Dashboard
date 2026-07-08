@@ -1,4 +1,4 @@
-{% extends "_base.html" %}
+﻿{% extends "_base.html" %}
 {% block title %}兑换报表{% endblock %}
 {% block page_title %}兑换报表{% endblock %}
 {% block page_subtitle %}EXCHANGE REPORTS{% endblock %}
@@ -92,7 +92,7 @@
         <div><div class="hd-title">分类兑换明细</div><div class="hd-sub">BY CATEGORY</div></div>
       </div>
       <div class="hd-r">
-        <input type="text" id="searchInput" placeholder="搜索分类" style="padding:4px 10px;background:rgba(0,217,255,0.06);border:1px solid var(--cyan-soft);color:#d6e8ff;font-size:12px;border-radius:2px;outline:none;">
+        <input type="text" id="searchInput" placeholder="搜索分类" style="padding:4px 10px;background:rgba(255,184,64,0.06);border:1px solid var(--cyan-soft);color:#f5e8c8;font-size:12px;border-radius:2px;outline:none;">
       </div>
     </div>
     <div class="panel-bd" style="flex:1; overflow:auto;">
@@ -104,7 +104,7 @@
           <th style="text-align:right">兑换总积分</th>
           <th>占比</th>
         </tr></thead>
-        <tbody><tr><td colspan="5" style="text-align:center;color:#3d6299;padding:30px">加载中...</td></tr></tbody>
+        <tbody><tr><td colspan="5" style="text-align:center;color:#7a6240;padding:30px">加载中...</td></tr></tbody>
       </table>
     </div>
   </div>
@@ -125,16 +125,16 @@
 {% block scripts %}
 <script>
 let allData = null;
-const CYAN = '#00e6ff', PURPLE = '#7862ff', GOLD = '#ffae00', TXT = '#5a8bd6';
+const CYAN = '#ffb840', PURPLE = '#d4a85a', GOLD = '#ffae00', TXT = '#b8956a';
 const baseOpt = {
   grid: { left: 50, right: 30, top: 30, bottom: 40 },
-  tooltip: { trigger: 'axis', backgroundColor: 'rgba(2,6,15,0.95)', borderColor: 'rgba(0,217,255,0.5)', textStyle: { color: '#d6e8ff' } },
-  legend: { textStyle: { color: '#94c8ff', fontSize: 11 }, top: 0 },
+  tooltip: { trigger: 'axis', backgroundColor: 'rgba(10,6,4,0.95)', borderColor: 'rgba(255,184,64,0.5)', textStyle: { color: '#f5e8c8' } },
+  legend: { textStyle: { color: '#f0d28a', fontSize: 11 }, top: 0 },
 };
 const axisStyle = {
-  axisLine: { lineStyle: { color: 'rgba(0,217,255,0.15)' }},
+  axisLine: { lineStyle: { color: 'rgba(255,184,64,0.15)' }},
   axisLabel: { color: TXT, fontSize: 10 },
-  splitLine: { lineStyle: { color: 'rgba(0,217,255,0.06)', type: 'dashed' }},
+  splitLine: { lineStyle: { color: 'rgba(255,184,64,0.06)', type: 'dashed' }},
 };
 const chartDaily = echarts.init(document.getElementById('chart-daily'));
 const chartMerch = echarts.init(document.getElementById('chart-merchant'));
@@ -163,16 +163,16 @@ async function load() {
     ],
     dataZoom: [{ type: 'inside', start: 0, end: 100 }],
     series: [
-      { name: '订单数', type: 'line', smooth: true, data: daily.map(d => d.OrderCount), lineStyle: { color: CYAN, width: 2, shadowColor: 'rgba(0,230,255,0.5)', shadowBlur: 8 }, itemStyle: { color: CYAN }, areaStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(0,230,255,0.4)'},{offset:1,color:'rgba(0,230,255,0)'}]} } },
+      { name: '订单数', type: 'line', smooth: true, data: daily.map(d => d.OrderCount), lineStyle: { color: CYAN, width: 2, shadowColor: 'rgba(255,184,64,0.5)', shadowBlur: 8 }, itemStyle: { color: CYAN }, areaStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(255,184,64,0.4)'},{offset:1,color:'rgba(255,184,64,0)'}]} } },
       { name: '兑换积分', type: 'line', yAxisIndex: 1, smooth: true, data: daily.map(d => d.TotalCoin), lineStyle: { color: PURPLE, width: 1.5, type: [4,4] }, itemStyle: { color: PURPLE } },
-      { name: '礼品数', type: 'bar', data: daily.map(d => d.GiftNum), barWidth: 4, itemStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(255,174,0,0.7)'},{offset:1,color:'rgba(255,174,0,0.05)'}]}, borderRadius: [2,2,0,0] } },
+      { name: '礼品数', type: 'bar', data: daily.map(d => d.GiftNum), barWidth: 4, itemStyle: { color: { type: 'linear', x:0,y:0,x2:0,y2:1, colorStops: [{offset:0,color:'rgba(255,184,64,0.7)'},{offset:1,color:'rgba(255,184,64,0.05)'}]}, borderRadius: [2,2,0,0] } },
     ],
   });
   // Merchant top
   const m = data.merchant_top || [];
   const top10 = m.slice(0, 10);
   if (top10.length === 0) {
-    document.getElementById('chart-merchant').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#5a8bd6;font-size:13px">暂无商家兑换数据（需等数据完整生成）</div>';
+    document.getElementById('chart-merchant').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#b8956a;font-size:13px">暂无商家兑换数据（需等数据完整生成）</div>';
   } else {
     chartMerch.setOption({
       grid: { left: 110, right: 80, top: 10, bottom: 10 },
@@ -181,24 +181,24 @@ async function load() {
       yAxis: { type: 'category', data: top10.map(x=>x.BusinessCnName).reverse(), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, fontSize: 11 } },
       series: [{
         type: 'bar', data: top10.map(x=>x.EarnCoin || x.TotalCoin).reverse(), barWidth: 14,
-        itemStyle: { color: { type: 'linear', x:0,y:0,x2:1,y2:0, colorStops: [{offset:0,color:'rgba(120,98,255,0.2)'},{offset:1,color:PURPLE}] }, borderRadius: [0,3,3,0], shadowColor: 'rgba(120,98,255,0.4)', shadowBlur: 8 },
+        itemStyle: { color: { type: 'linear', x:0,y:0,x2:1,y2:0, colorStops: [{offset:0,color:'rgba(212,168,90,0.2)'},{offset:1,color:PURPLE}] }, borderRadius: [0,3,3,0], shadowColor: 'rgba(212,168,90,0.4)', shadowBlur: 8 },
         label: { show: true, position: 'right', color: CYAN, fontFamily: 'Manrope', fontWeight: 700, formatter: p => p.value.toLocaleString() },
       }],
     });
   }
   // Category pie
   const cat = data.category || [];
-  const palette = [CYAN, PURPLE, '#00ff9d', GOLD, '#ff3e6c', '#5a8bd6', '#b35cff', '#0099cc', '#ff8800'];
+  const palette = [CYAN, PURPLE, '#6ee06b', GOLD, '#ff5a4e', '#b8956a', '#ffe066', '#a86a20', '#ff6a1a'];
   if (cat.length === 0) {
-    document.getElementById('chart-cat-pie').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#5a8bd6;font-size:13px">暂无分类数据</div>';
+    document.getElementById('chart-cat-pie').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#b8956a;font-size:13px">暂无分类数据</div>';
   } else {
     chartCatPie.setOption({
       tooltip: { ...baseOpt.tooltip, trigger: 'item', formatter: '{b}<br/>积分 {c}<br/>占比 {d}%' },
-      legend: { type: 'scroll', orient: 'vertical', right: 8, top: 'middle', textStyle: { color: '#94c8ff', fontSize: 11 }, itemWidth: 10, itemHeight: 10, itemGap: 8 },
+      legend: { type: 'scroll', orient: 'vertical', right: 8, top: 'middle', textStyle: { color: '#f0d28a', fontSize: 11 }, itemWidth: 10, itemHeight: 10, itemGap: 8 },
       series: [{
         type: 'pie', radius: ['38%', '68%'], center: ['38%', '52%'],
         avoidLabelOverlap: true,
-        itemStyle: { borderColor: '#040b1c', borderWidth: 2, color: (params) => palette[params.dataIndex % palette.length] },
+        itemStyle: { borderColor: '#0a0604', borderWidth: 2, color: (params) => palette[params.dataIndex % palette.length] },
         label: { show: false }, labelLine: { show: false },
         data: cat.map(c => ({ name: c.GiftCategory, value: c.TotalCoin })),
         emphasis: { scale: true, scaleSize: 8, label: { show: true, color: CYAN, fontWeight: 700, fontSize: 12, formatter: '{b}\n{d}%' } },
@@ -213,7 +213,7 @@ async function load() {
 }
 function renderCatTable(cat, total, tb) {
   if (cat.length === 0) {
-    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#3d6299;padding:30px">暂无数据</td></tr>';
+    tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#7a6240;padding:30px">暂无数据</td></tr>';
     return;
   }
   tb.innerHTML = cat.map(c => `
@@ -223,8 +223,8 @@ function renderCatTable(cat, total, tb) {
       <td class="num">${(c.GiftNum||0).toLocaleString()}</td>
       <td class="num" style="color:var(--cyan);font-weight:700">${(c.TotalCoin||0).toLocaleString()}</td>
       <td><div style="display:flex;align-items:center;gap:8px">
-        <div style="width:90px;height:6px;background:rgba(0,217,255,0.1);border-radius:2px;overflow:hidden">
-          <div style="width:${(c.TotalCoin/total*100).toFixed(1)}%;height:100%;background:linear-gradient(90deg,#00d9ff,#00e6ff);box-shadow:0 0 6px var(--cyan)"></div>
+        <div style="width:90px;height:6px;background:rgba(255,184,64,0.1);border-radius:2px;overflow:hidden">
+          <div style="width:${(c.TotalCoin/total*100).toFixed(1)}%;height:100%;background:linear-gradient(90deg,#d6891f,#ffb840);box-shadow:0 0 6px var(--cyan)"></div>
         </div>
         <span style="font-size:11px;color:var(--blue-text);font-weight:600">${(c.TotalCoin/total*100).toFixed(1)}%</span>
       </div></td>

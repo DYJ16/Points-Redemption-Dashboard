@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}商家商品 · 金币联盟{% endblock %}
+
+{% block content %}
+<section class="section" style="padding-top:50px">
+  <div class="container">
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for cat, msg in messages %}
+          <div class="flash flash-{{ 'error' if cat == 'error' else 'ok' }}">{{ msg }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="section-head">
+      <h2 class="section-title">
+        <span class="num">M.</span>
+        商家商品 · 可发放积分的商品
+      </h2>
+      <a href="{{ url_for('merchant_panel') }}" class="section-link">← 返回控制台</a>
+    </div>
+
+    <div class="panel" style="margin-bottom:24px;background:var(--paper);border:1px dashed var(--line)">
+      <h3 class="panel-title">商家信息</h3>
+      <div class="panel-row"><span class="key">店铺名称</span><span class="val">{{ merchant.shop_name }}</span></div>
+      <div class="panel-row"><span class="key">主营品类</span><span class="val">{{ merchant.category or '—' }}</span></div>
+      <div class="panel-row"><span class="key">店铺地址</span><span class="val">{{ merchant.address or '—' }}</span></div>
+      <div class="panel-row"><span class="key">入驻时间</span><span class="val">{{ merchant.created_at[:10] }}</span></div>
+      <div class="panel-row"><span class="key">店铺状态</span><span class="val" style="color:var(--gold-deep)">● 已激活</span></div>
+    </div>
+
+    <h3 class="panel-title" style="margin-top:30px">本店可发放积分兑换的商品（按品类匹配）</h3>
+    {% if products %}
+    <div class="product-grid">
+      {% for p in products %}
+      <article class="product-card">
+        <div class="product-media">
+          <a href="{{ url_for('gift_detail', pid=p.id) }}">
+            <img src="{{ url_for('static', filename='img/products/' + p.cover) }}" alt="{{ p.name }}" loading="lazy">
+          </a>
+          {% if p.tag %}<span class="product-tag">{{ p.tag }}</span>{% endif %}
+        </div>
+        <div class="product-body">
+          <a href="{{ url_for('gift_detail', pid=p.id) }}" class="product-name">{{ p.name }}</a>
+          <div class="product-price">
+            <span class="coin-amount">{{ p.price_coins }}<small>金币</small></span>
+          </div>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:40px;color:var(--ink-muted);background:var(--paper);border-radius:var(--radius)">
+      暂无主营品类 "{{ merchant.category }}" 下的商品
+    </div>
+    {% endif %}
+
+    <div class="panel" style="margin-top:36px">
+      <h3 class="panel-title">下一步</h3>
+      <p style="color:var(--ink-muted);font-size:14px;margin-bottom:18px">为这些商品生成积分码，会员兑换后得到金币可在"金币兑礼"中使用。</p>
+      <a href="{{ url_for('merchant_codes') }}" class="btn btn-gold" style="display:inline-block;text-decoration:none">去生成积分码 →</a>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

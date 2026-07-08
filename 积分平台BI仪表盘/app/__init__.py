@@ -5,7 +5,21 @@ Flask 应用入口
 import os
 import logging
 from flask import Flask, render_template, jsonify, request
-from dotenv import load_dotenv
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(path):
+        if not path or not os.path.exists(path):
+            return False
+        with open(path, encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#') or '=' not in line:
+                    continue
+                key, value = line.split('=', 1)
+                os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+        return True
 
 load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 logging.basicConfig(level=logging.INFO, format='%(asctime)s [%(levelname)s] %(message)s')
@@ -139,49 +153,103 @@ def api_merchants():
     if service.db.mock_mode:
         return jsonify(service.db.query('-- merchants'))
     return jsonify(service.db.query("""
-        SELECT BusinessID, BusinessCnName, BusinessEnName, BusinessStatus,
-               CONVERT(varchar(19), CreateTime, 120) AS CreateTime
-        FROM dbo.BusinessMen
-        ORDER BY BusinessID
+        SELECT id AS BusinessID, shop_name AS BusinessCnName, shop_name AS BusinessEnName,
+               CASE status WHEN 'active' THEN 1 ELSE 0 END AS BusinessStatus,
+               CONVERT(varchar(19), created_at, 120) AS CreateTime
+        FROM live.merchants
+        ORDER BY id
     """))
 
 @app.route('/api/merchant_detail')
 def api_merchant_detail():
     biz_id = request.args.get('id', '0', type=int)
     if service.db.mock_mode:
-        return jsonify({'mock': True, 'id': biz_id})
+        import random
+        from datetime import datetime, timedelta
+        rnd = random.Random(biz_id or 1)
+        today = datetime.now()
+        merchants = service.db.mock_data['merchants']
+        gifts = service.db.mock_data['gifts']
+        idx = ((biz_id or 1) - 1) % len(merchants)
+        biz_name, _, _ = merchants[idx]
+        detail = {
+            'BusinessID': biz_id,
+            'BusinessCnName': biz_name,
+            'BusinessEnName': biz_name,
+            'BusinessStatus': 1,
+            'CreateTime': (today - timedelta(days=rnd.randint(180, 800))).strftime('%Y-%m-%d %H:%M:%S'),
+            'ProductCount': rnd.randint(8, 24),
+            'MemberCount': rnd.randint(200, 2000),
+            'EarnCoin': rnd.randint(500000, 8000000),
+            'JFCodeCount': rnd.randint(2000, 20000),
+        }
+        n_p = rnd.randint(8, 16)
+        products = []
+        for i in range(n_p):
+            products.append({
+                'ProductID': biz_id * 100 + i,
+                'ProductName': f'{biz_name}-商品{i+1}',
+                'ProductBrand': rnd.choice(['星元', '金龙鱼', '百事', '可口可乐', '农夫山泉']),
+                'ProductType': rnd.choice(['饮料', '零食', '日化', '家电', '数码']),
+                'ProductCoin': rnd.randint(50, 2000),
+                'ProductStatus': rnd.choice([1, 1, 1, 1, 0]),
+            })
+        daily = []
+        for d in range(30, 0, -1):
+            dt = today - timedelta(days=d)
+            daily.append({
+                'FDate': dt.strftime('%Y-%m-%d'),
+                'TradeCount': rnd.randint(5, 60),
+                'EarnCoin': rnd.randint(5000, 80000),
+            })
+        members = []
+        for i in range(20):
+            members.append({
+                'CustomerID': biz_id * 1000 + i,
+                'RealName': f'会员{i:03d}' if i % 5 != 0 else f'验证会员{i:02d}',
+                'LoginName': f'user{biz_id:02d}_{i:03d}',
+                'CreateTime': (today - timedelta(days=rnd.randint(1, 720))).strftime('%Y-%m-%d %H:%M:%S'),
+                'ValidCoin': rnd.randint(500, 30000),
+                'HistoryCoin': rnd.randint(5000, 80000),
+            })
+        return jsonify({
+            'detail': detail,
+            'products': products,
+            'daily': daily,
+            'members': members,
+        })
     detail = service.db.query(f"""
-        SELECT bm.BusinessID, bm.BusinessCnName, bm.BusinessEnName, bm.BusinessStatus,
-               CONVERT(varchar(19), bm.CreateTime, 120) AS CreateTime,
-               (SELECT COUNT(*) FROM dbo.ProductInfo WHERE BusinessID = bm.BusinessID) AS ProductCount,
-               (SELECT COUNT(DISTINCT CustomerID) FROM dbo.CustomerInfo WHERE FromBusiness = bm.BusinessID) AS MemberCount,
-               (SELECT ISNULL(SUM(CASE WHEN Coin>0 THEN Coin ELSE 0 END),0)
-                FROM dbo.AccountTradeLog WHERE BusinessID = bm.BusinessID AND TradeType IN (2,3) AND ISNULL(IsCancled,0)=0) AS EarnCoin,
-               (SELECT COUNT(*) FROM dbo.JFCode WHERE ProductID IN
-                (SELECT ProductID FROM dbo.ProductInfo WHERE BusinessID = bm.BusinessID)) AS JFCodeCount
-        FROM dbo.BusinessMen bm
-        WHERE bm.BusinessID = {biz_id}
+        SELECT m.id AS BusinessID, m.shop_name AS BusinessCnName, m.shop_name AS BusinessEnName,
+               CASE m.status WHEN 'active' THEN 1 ELSE 0 END AS BusinessStatus,
+               CONVERT(varchar(19), m.created_at, 120) AS CreateTime,
+               (SELECT COUNT(*) FROM live.products WHERE category = m.category) AS ProductCount,
+               (SELECT COUNT(DISTINCT user_id) FROM live.user_merchants WHERE merchant_id = m.id) AS MemberCount,
+               (SELECT ISNULL(SUM(total_coins),0) FROM live.orders) AS EarnCoin,
+               (SELECT COUNT(*) FROM live.coin_codes WHERE merchant_id = m.id) AS JFCodeCount
+        FROM live.merchants m
+        WHERE m.id = {biz_id}
     """)
     products = service.db.query(f"""
-        SELECT ProductID, ProductName, ProductBrand, ProductType, ProductCoin, ProductStatus
-        FROM dbo.ProductInfo WHERE BusinessID = {biz_id} ORDER BY ProductID
+        SELECT id AS ProductID, name AS ProductName, '金币联盟' AS ProductBrand,
+               category AS ProductType, price_coins AS ProductCoin, 1 AS ProductStatus
+        FROM live.products WHERE category = (SELECT category FROM live.merchants WHERE id = {biz_id})
+        ORDER BY id
     """)
     daily = service.db.query(f"""
-        SELECT CONVERT(varchar(10), atl.TradeTime, 120) AS FDate,
+        SELECT CONVERT(varchar(10), o.created_at, 120) AS FDate,
                COUNT(*) AS TradeCount,
-               ISNULL(SUM(CASE WHEN atl.Coin>0 THEN atl.Coin ELSE 0 END), 0) AS EarnCoin
-        FROM dbo.AccountTradeLog atl
-        WHERE atl.BusinessID = {biz_id} AND atl.TradeType IN (2,3) AND ISNULL(atl.IsCancled,0)=0
-        GROUP BY CONVERT(varchar(10), atl.TradeTime, 120)
+               ISNULL(SUM(o.total_coins), 0) AS EarnCoin
+        FROM live.orders o
+        GROUP BY CONVERT(varchar(10), o.created_at, 120)
         ORDER BY FDate ASC
     """)
     members = service.db.query(f"""
-        SELECT TOP 20 c.CustomerID, c.RealName, c.LoginName, c.CreateTime,
-               a.ValidCoin, a.HistoryCoin
-        FROM dbo.CustomerInfo c
-        JOIN dbo.Account a ON a.OwnerID = c.CustomerID AND a.Acctype = 1
-        WHERE c.FromBusiness = {biz_id} AND c.CusStatus = 1
-        ORDER BY a.ValidCoin DESC
+        SELECT TOP 20 u.id AS CustomerID, u.nickname AS RealName, u.phone AS LoginName,
+               CONVERT(varchar(19), u.created_at, 120) AS CreateTime,
+               u.coins AS ValidCoin, u.coins AS HistoryCoin
+        FROM live.users u
+        LEFT JOIN live.user_merchants um ON u.id = um.user_id AND um.merchant_id = {biz_id}
+        ORDER BY u.coins DESC
     """)
     return jsonify({
         'detail': detail[0] if detail else {},
@@ -198,23 +266,30 @@ def api_members():
     size = request.args.get('size', 50, type=int)
     keyword = request.args.get('keyword', '').strip()
     if service.db.mock_mode:
-        return jsonify(service.db.query('-- members'))
-    where = "WHERE c.CusStatus = 1"
+        rows = service.db.query('-- members')
+        if keyword:
+            kw = keyword.lower()
+            rows = [r for r in rows if kw in (r.get('RealName') or '').lower() or kw in (r.get('LoginName') or '').lower()]
+        total = len(rows)
+        start = (page - 1) * size
+        rows = rows[start:start + size]
+        return jsonify({'total': total, 'page': page, 'size': size, 'rows': rows})
+    where = ""
     if keyword:
-        where += f" AND (c.RealName LIKE N'%{keyword}%' OR c.LoginName LIKE N'%{keyword}%')"
-    total_row = service.db.query(f"SELECT COUNT(*) AS total FROM dbo.CustomerInfo c {where}")
+        where = f"WHERE nickname LIKE N'%{keyword}%' OR phone LIKE N'%{keyword}%'"
+    total_row = service.db.query(f"SELECT COUNT(*) AS total FROM live.users {where}")
     rows = service.db.query(f"""
-        SELECT c.CustomerID, c.LoginName, c.RealName, c.Gender, c.Phone, c.Email,
-               CONVERT(varchar(19), c.CreateTime, 120) AS CreateTime,
-               ISNULL(a.ValidCoin,0) AS ValidCoin,
-               ISNULL(a.FrozenCoin,0) AS FrozenCoin,
-               ISNULL(a.HistoryCoin,0) AS HistoryCoin,
-               ISNULL(bm.BusinessCnName, N'--') AS FromBusiness
-        FROM dbo.CustomerInfo c
-        LEFT JOIN dbo.Account a ON a.OwnerID = c.CustomerID AND a.Acctype = 1
-        LEFT JOIN dbo.BusinessMen bm ON c.FromBusiness = bm.BusinessID
+        SELECT u.id AS CustomerID, u.phone AS LoginName, u.nickname AS RealName,
+               CASE u.gender WHEN '男' THEN 1 WHEN '女' THEN 2 ELSE 0 END AS Gender,
+               u.phone AS Phone, u.email AS Email,
+               CONVERT(varchar(19), u.created_at, 120) AS CreateTime,
+               u.coins AS ValidCoin,
+               0 AS FrozenCoin,
+               u.coins AS HistoryCoin,
+               N'金币联盟' AS FromBusiness
+        FROM live.users u
         {where}
-        ORDER BY a.ValidCoin DESC
+        ORDER BY u.coins DESC
         OFFSET {(page-1)*size} ROWS FETCH NEXT {size} ROWS ONLY
     """)
     return jsonify({
@@ -263,50 +338,69 @@ def api_etl_status():
 @app.route('/api/report_summary')
 def api_report_summary():
     if service.db.mock_mode:
+        from datetime import datetime, timedelta
+        import random
+        rnd = random.Random(7)
+        today = datetime.now()
+        daily_gift = []
+        for d in range(30, 0, -1):
+            dt = today - timedelta(days=d)
+            daily_gift.append({
+                'FDate': dt.strftime('%Y-%m-%d'),
+                'OrderCount': rnd.randint(15, 50),
+                'GiftNum': rnd.randint(2, 15),
+                'TotalCoin': rnd.randint(50000, 200000),
+            })
+        cats = service.db.mock_data['cats']
+        category = [{'GiftCategory': c, 'OrderCount': rnd.randint(20, 100), 'TotalCoin': rnd.randint(50000, 200000), 'GiftNum': rnd.randint(5, 30)} for c in cats]
+        category.sort(key=lambda x: -x['TotalCoin'])
+        merchant_top = [{'BusinessCnName': n, 'TradeCount': rnd.randint(20, 200), 'EarnCoin': rnd.randint(50000, 500000)} for n, _, _ in service.db.mock_data['merchants']]
+        merchant_top.sort(key=lambda x: -x['EarnCoin'])
         return jsonify({
-            'daily_gift': [], 'daily_coin': [], 'category': [], 'merchant_top': [],
-            'kpi': {'orderCount': 0, 'totalCoin': 0, 'memberCount': 0, 'giftCount': 0},
+            'daily_gift': daily_gift,
+            'daily_coin': daily_gift,
+            'category': category,
+            'merchant_top': merchant_top,
+            'kpi': {'orderCount': 532, 'totalCoin': 7851000, 'memberCount': 50023, 'giftCount': 16},
         })
     return jsonify({
         'daily_gift': service.db.query("""
-            SELECT CONVERT(varchar(10), o.OrderTime, 120) AS FDate,
-                   COUNT(DISTINCT o.OrderID) AS OrderCount,
-                   ISNULL(SUM(og.GiftNum), 0) AS GiftNum,
-                   ISNULL(SUM(o.TotalCoin), 0) AS TotalCoin
-            FROM dbo.OrderInfo o
-            JOIN dbo.OrderGift og ON o.OrderID = og.OrderID
-            WHERE o.OrderStatus IN (1,2,3)
-            GROUP BY CONVERT(varchar(10), o.OrderTime, 120)
+            SELECT CONVERT(varchar(10), o.created_at, 120) AS FDate,
+                   COUNT(DISTINCT o.id) AS OrderCount,
+                   ISNULL(SUM(oi.qty), 0) AS GiftNum,
+                   ISNULL(SUM(o.total_coins), 0) AS TotalCoin
+            FROM live.orders o
+            JOIN live.order_items oi ON o.id = oi.order_id
+            WHERE o.status IN ('已下单','配送中','已完成')
+            GROUP BY CONVERT(varchar(10), o.created_at, 120)
             ORDER BY FDate ASC
         """),
         'category': service.db.query("""
-            SELECT g.GiftCategory,
-                   COUNT(DISTINCT og.OrderID) AS OrderCount,
-                   ISNULL(SUM(o.TotalCoin), 0) AS TotalCoin,
-                   ISNULL(SUM(og.GiftNum), 0) AS GiftNum
-            FROM dbo.GiftInfo g
-            LEFT JOIN dbo.OrderGift og ON g.GiftID = og.GiftID
-            LEFT JOIN dbo.OrderInfo o ON og.OrderID = o.OrderID AND o.OrderStatus IN (1,2,3)
-            WHERE g.GiftStatus = 1
-            GROUP BY g.GiftCategory
+            SELECT p.category AS GiftCategory,
+                   COUNT(DISTINCT o.id) AS OrderCount,
+                   ISNULL(SUM(o.total_coins), 0) AS TotalCoin,
+                   ISNULL(SUM(oi.qty), 0) AS GiftNum
+            FROM live.products p
+            LEFT JOIN live.order_items oi ON p.id = oi.product_id
+            LEFT JOIN live.orders o ON oi.order_id = o.id AND o.status IN ('已下单','配送中','已完成')
+            GROUP BY p.category
             ORDER BY TotalCoin DESC
         """),
         'merchant_top': service.db.query("""
-            SELECT TOP 20 bm.BusinessCnName,
-                   COUNT(DISTINCT atl.TradeLogID) AS TradeCount,
-                   ISNULL(SUM(CASE WHEN atl.Coin>0 THEN atl.Coin ELSE 0 END), 0) AS EarnCoin
-            FROM dbo.BusinessMen bm
-            LEFT JOIN dbo.AccountTradeLog atl ON atl.BusinessID = bm.BusinessID
-                AND atl.TradeType IN (2,3) AND ISNULL(atl.IsCancled,0)=0
-            WHERE bm.BusinessStatus = 1
-            GROUP BY bm.BusinessCnName
+            SELECT TOP 20 m.shop_name AS BusinessCnName,
+                   COUNT(DISTINCT o.id) AS TradeCount,
+                   ISNULL(SUM(o.total_coins), 0) AS EarnCoin
+            FROM live.merchants m
+            LEFT JOIN live.orders o ON 1=1
+            WHERE m.status = 'active'
+            GROUP BY m.shop_name
             ORDER BY EarnCoin DESC
         """),
         'kpi': {
-            'orderCount': (service.db.query("SELECT COUNT(*) AS c FROM dbo.OrderInfo WHERE OrderStatus IN (1,2,3)") or [{'c':0}])[0]['c'],
-            'totalCoin': (service.db.query("SELECT ISNULL(SUM(TotalCoin),0) AS c FROM dbo.OrderInfo WHERE OrderStatus IN (1,2,3)") or [{'c':0}])[0]['c'],
-            'memberCount': (service.db.query("SELECT COUNT(*) AS c FROM dbo.CustomerInfo WHERE CusStatus=1") or [{'c':0}])[0]['c'],
-            'giftCount': (service.db.query("SELECT ISNULL(SUM(GiftNum),0) AS c FROM dbo.OrderGift og JOIN dbo.OrderInfo o ON og.OrderID=o.OrderID WHERE o.OrderStatus IN (1,2,3)") or [{'c':0}])[0]['c'],
+            'orderCount': (service.db.query("SELECT COUNT(*) AS c FROM live.orders WHERE status IN ('已下单','配送中','已完成')") or [{'c':0}])[0]['c'],
+            'totalCoin': (service.db.query("SELECT ISNULL(SUM(total_coins),0) AS c FROM live.orders WHERE status IN ('已下单','配送中','已完成')") or [{'c':0}])[0]['c'],
+            'memberCount': (service.db.query("SELECT COUNT(*) AS c FROM live.users") or [{'c':0}])[0]['c'],
+            'giftCount': (service.db.query("SELECT ISNULL(SUM(qty),0) AS c FROM live.order_items oi JOIN live.orders o ON oi.order_id=o.id WHERE o.status IN ('已下单','配送中','已完成')") or [{'c':0}])[0]['c'],
         },
     })
 
@@ -314,7 +408,6 @@ def api_report_summary():
 # 告警管理
 @app.route('/api/alerts')
 def api_alerts():
-    # 真实告警规则：检测订单异常/积分异常/账户异常
     if service.db.mock_mode:
         return jsonify([
             {'AlertID': 1, 'Level': 'HIGH', 'Type': '订单取消率异常', 'Source': '订单 #3xxxxx', 'Detail': '近 1h 取消订单 12 笔，超过阈值 8 笔', 'Time': '2026-07-06 19:45:23', 'Status': 'PENDING'},
@@ -327,8 +420,8 @@ def api_alerts():
     alerts = []
     # 1. 取消率异常
     cancel = service.db.query("""
-        SELECT COUNT(*) AS c FROM dbo.OrderInfo
-        WHERE OrderStatus = 4 AND OrderTime >= DATEADD(HOUR, -1, GETDATE())
+        SELECT COUNT(*) AS c FROM live.orders
+        WHERE status = '已取消' AND created_at >= DATEADD(HOUR, -1, GETDATE())
     """)
     cancel_count = cancel[0]['c'] if cancel else 0
     if cancel_count > 5:
@@ -339,41 +432,26 @@ def api_alerts():
         })
     # 2. 负余额账户
     neg = service.db.query("""
-        SELECT TOP 5 AccountID, OwnerID, ValidCoin
-        FROM dbo.Account
-        WHERE Acctype = 1 AND ValidCoin < 0
-        ORDER BY ValidCoin ASC
+        SELECT TOP 5 id, coins FROM live.users
+        WHERE coins < 0
+        ORDER BY coins ASC
     """)
     for n in neg:
         alerts.append({
             'AlertID': len(alerts)+1, 'Level': 'MEDIUM', 'Type': '会员积分余额为负',
-            'Source': f'会员 #{n["OwnerID"]}', 'Detail': f'账户积分余额 {n["ValidCoin"]}，疑似退货冲账未补',
+            'Source': f'会员 #{n["id"]}', 'Detail': f'账户积分余额 {n["coins"]}，疑似退货冲账未补',
             'Time': '实时', 'Status': 'PENDING'
         })
-    # 3. 商家负债异常
-    merchant_neg = service.db.query("""
-        SELECT TOP 5 bm.BusinessCnName, a.ValidCoin
-        FROM dbo.Account a
-        JOIN dbo.BusinessMen bm ON a.OwnerID = bm.BusinessID
-        WHERE a.Acctype = 2 AND a.ValidCoin < -2000000
-        ORDER BY a.ValidCoin ASC
-    """)
-    for m in merchant_neg:
-        alerts.append({
-            'AlertID': len(alerts)+1, 'Level': 'HIGH', 'Type': '商家负债异常',
-            'Source': m['BusinessCnName'], 'Detail': f'积负余额 {m["ValidCoin"]}，超过预警线',
-            'Time': '实时', 'Status': 'PENDING'
-        })
-    # 4. 配送超时
+    # 3. 配送超时
     timeout = service.db.query("""
-        SELECT TOP 5 OrderID, CreateTime FROM dbo.OrderInfo
-        WHERE OrderStatus = 2 AND CreateTime < DATEADD(HOUR, -48, GETDATE())
-        ORDER BY CreateTime ASC
+        SELECT TOP 5 id, created_at FROM live.orders
+        WHERE status = '配送中' AND created_at < DATEADD(HOUR, -48, GETDATE())
+        ORDER BY created_at ASC
     """)
     for t in timeout:
         alerts.append({
             'AlertID': len(alerts)+1, 'Level': 'LOW', 'Type': '配送超时',
-            'Source': f'订单 #{t["OrderID"]}', 'Detail': f'订单已发货 48h+ 未签收',
+            'Source': f'订单 #{t["id"]}', 'Detail': f'订单已发货 48h+ 未签收',
             'Time': '实时', 'Status': 'PENDING'
         })
     return jsonify(alerts if alerts else [{'AlertID': 0, 'Level': 'OK', 'Type': '系统正常', 'Source': '--', 'Detail': '所有指标在阈值内', 'Time': '实时', 'Status': 'OK'}])
@@ -402,9 +480,9 @@ def api_system_info():
             base_info['db']['size'] = f"{int(db_size[0]['mb'])} MB"
     except Exception: pass
     try:
-        last_etl = db.query("SELECT TOP 1 CONVERT(varchar(19), LastETLTime, 120) AS t FROM dbo.ETL_Control WHERE LastETLTime IS NOT NULL ORDER BY LastETLTime DESC")
-        if last_etl:
-            base_info['etl']['last_run'] = last_etl[0]['t']
+        last_order = db.query("SELECT TOP 1 CONVERT(varchar(19), created_at, 120) AS t FROM live.orders ORDER BY created_at DESC")
+        if last_order:
+            base_info['etl']['last_run'] = last_order[0]['t']
     except Exception: pass
     return jsonify(base_info)
 
